@@ -7,7 +7,7 @@ Step 2. [Install Haxe 4.3.7](https://haxe.org/download/version/4.3.7/)
 Step 3. Run these commands to install the libraries required (the same versions the CI uses, see `.github/scripts/install-libs.sh`):
 
 ```
-curl -L -o hxcpp.zip https://github.com/HaxeFoundation/hxcpp/releases/download/v4.3.184/hxcpp-4.3.184.zip && haxelib install hxcpp.zip
+curl -L -o hxcpp.zip https://github.com/HaxeFoundation/hxcpp/releases/download/v4.3.175/hxcpp-4.3.175.zip && haxelib install hxcpp.zip
 haxelib install lime 8.3.2
 haxelib install openfl 9.5.2
 haxelib install flixel 6.2.0
@@ -35,13 +35,6 @@ haxelib git discord_rpc https://github.com/Aidan63/linc_discord-rpc
 
 Only ARM64 is built. Mods, replays and crash logs live in the storage folder picked in `Options > Mobile > Storage` (default `Android/data/com.leather128.funkin/files`). The bundled mods are copied there on the first launch.
 
-## iOS
-
-* macOS with Xcode
-* `haxelib run lime build ios`
-
-Mods, replays and crash logs live in the app's Documents folder, reachable from the Files app.
-
 ## Windows
 
 Install Visual Studio Community 2019, and while installing instead of selecting the normal options, only select these components in the 'individual components' instead (or the closest equivalents).
@@ -59,4 +52,4 @@ In your package manager, install the following packages:
 sudo apt-get install libvlc-dev libvlccore-dev vlc-bin luajit
 ```
 
-Step 4. Run `haxelib run lime test [platform]` in the project directory while replacing '[platform]' with your build target (`android`, `ios`, `windows`, `linux`, `mac`).
+Step 4. Run `haxelib run lime test [platform]` in the project directory while replacing '[platform]' with your build target (`android`, `windows`, `linux`, `mac`).

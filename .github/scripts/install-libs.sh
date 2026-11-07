@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-HXCPP_VERSION=4.3.184
+HXCPP_VERSION=4.3.175
 
 curl -sSL -o "${RUNNER_TEMP:-/tmp}/hxcpp.zip" "https://github.com/HaxeFoundation/hxcpp/releases/download/v$HXCPP_VERSION/hxcpp-$HXCPP_VERSION.zip"
 haxelib install "${RUNNER_TEMP:-/tmp}/hxcpp.zip" --quiet --never

@@ -16,7 +16,7 @@ import flixel.FlxG;
 import utilities.CoolUtil;
 import lime.utils.Assets;
 import ui.HealthIcon;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import game.Note;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.FlxSprite;

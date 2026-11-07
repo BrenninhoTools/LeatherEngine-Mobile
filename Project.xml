@@ -111,7 +111,7 @@
 	</section>
 
 	<section if="android">
-		<config:android min-sdk-version="21" target-sdk-version="33" />
+		<config:android min-sdk-version="21" target-sdk-version="34" />
 		<architecture name="arm64" exclude="armv7" />
 		<android permission="android.permission.READ_EXTERNAL_STORAGE" />
 		<android permission="android.permission.WRITE_EXTERNAL_STORAGE" />

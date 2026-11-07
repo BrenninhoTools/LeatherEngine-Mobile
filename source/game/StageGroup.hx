@@ -13,7 +13,7 @@ import flixel.util.FlxColor;
 import flixel.math.FlxPoint;
 import states.PlayState;
 import flixel.util.FlxTimer;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.group.FlxGroup;

@@ -17,7 +17,7 @@ import llua.LuaL;
 import flixel.FlxSprite;
 import states.PlayState;
 import lime.utils.Assets;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import utilities.CoolUtil;
 import polymod.backends.PolymodAssets;
 import flixel.tweens.FlxEase;

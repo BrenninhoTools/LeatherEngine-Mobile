@@ -10,7 +10,7 @@ import utilities.Discord.DiscordClient;
 import utilities.Options;
 import flixel.util.FlxTimer;
 import substates.ResetScoreSubstate;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import lime.app.Application;
 import flixel.tweens.FlxTween;
 import game.Song;

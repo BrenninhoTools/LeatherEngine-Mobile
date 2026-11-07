@@ -2,7 +2,7 @@ package ui;
 
 import game.Cutscene;
 import game.Cutscene.DialogueSection;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.addons.text.FlxTypeText;

@@ -37,7 +37,7 @@ jobs:
       - uses: nttld/setup-ndk@v1
         id: setup-ndk
         with:
-          ndk-version: r21e
+          ndk-version: r28c
           local-cache: true
 
       - uses: krdlab/setup-haxe@master

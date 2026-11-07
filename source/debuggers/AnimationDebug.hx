@@ -12,7 +12,7 @@ import states.PlayState;
 import utilities.CoolUtil;
 import game.Character;
 import game.Boyfriend;
-import flixel.system.FlxSound;
+import flixel.sound.FlxSound;
 import flixel.addons.ui.FlxUIDropDownMenu;
 import flixel.FlxG;
 import flixel.FlxCamera;

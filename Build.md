@@ -4,19 +4,18 @@ Step 1. [Install git-scm](https://git-scm.com/downloads) if you don't have it al
 
 Step 2. [Install Haxe 4.3.7](https://haxe.org/download/version/4.3.7/)
 
-Step 3. Run these commands to install the libraries required (the same pinned versions the CI uses, see `.github/scripts/install-libs.sh`):
+Step 3. Run these commands to install the libraries required (the same versions the CI uses, see `.github/scripts/install-libs.sh`):
 
 ```
-haxelib install hxcpp 4.3.2
-haxelib install lime 8.1.3
-haxelib install openfl 9.3.4
-haxelib install flixel 5.2.2
-haxelib install flixel-addons 3.0.2
-haxelib install flixel-ui 2.5.0
-haxelib install hscript 2.5.0
-haxelib install thx.semver 0.2.2
-haxelib install polymod 1.7.0 --skip-dependencies
-haxelib install hxvlc 2.3.1 --skip-dependencies
+curl -L -o hxcpp.zip https://github.com/HaxeFoundation/hxcpp/releases/download/v4.3.184/hxcpp-4.3.184.zip && haxelib install hxcpp.zip
+haxelib install lime 8.3.2
+haxelib install openfl 9.5.2
+haxelib install flixel 6.2.1
+haxelib install flixel-addons 4.0.1
+haxelib install hscript 2.7.0
+haxelib install polymod 2.0.0
+haxelib install hxvlc 2.3.2 --skip-dependencies
+haxelib git flixel-ui https://github.com/HaxeFlixel/flixel-ui ff2f30148cb1a7c9b10373aa89cf1e0d7aafb648
 haxelib git flixelTextureAtlas https://github.com/Smokey555/Flixel-TextureAtlas 4c6c8e1529156e753937ad13cd28f189f0cbc218
 haxelib git linc_luajit https://github.com/superpowers04/linc_luajit daf0664aee99aa8b8d6bdd1eda993a1c3a399067
 haxelib git extension-androidtools https://github.com/MAJigsaw77/extension-androidtools 4ef308412a7ae88a60862d1e97a4aa34765b1dcc
@@ -27,7 +26,7 @@ haxelib git discord_rpc https://github.com/Aidan63/linc_discord-rpc
 
 ## Android
 
-* Android SDK + NDK r21e
+* Android SDK + NDK r28c
 * Java 17
 * `haxelib run lime setup android` (point it to your SDK, NDK and Java)
 * `haxelib run lime build android`

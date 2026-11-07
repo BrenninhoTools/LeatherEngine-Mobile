@@ -93,6 +93,8 @@ jobs:
           haxelib run lime config ANDROID_NDK_ROOT ${{ steps.setup-ndk.outputs.ndk-path }}
           haxelib run lime config JAVA_HOME $JAVA_HOME
           haxelib run lime config ANDROID_SETUP true
+          mkdir -p ~/.gradle
+          printf 'org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8\norg.gradle.logging.stacktrace=all\n' > ~/.gradle/gradle.properties
 
       - name: Prepare Signing Key
         env:

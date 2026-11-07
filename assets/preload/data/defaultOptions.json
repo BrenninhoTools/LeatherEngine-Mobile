@@ -267,6 +267,14 @@
             "option": "save",
             "value": "{}",
             "save": "autosave"
+        },
+        {
+            "option": "hitboxMode",
+            "value": "lanes"
+        },
+        {
+            "option": "hitboxVisible",
+            "value": true
         }
     ]
 }

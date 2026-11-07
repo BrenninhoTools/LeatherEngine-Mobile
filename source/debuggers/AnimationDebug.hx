@@ -62,6 +62,10 @@ class AnimationDebug extends MusicBeatState {
 	var camHUD:FlxCamera;
 
 	override function create() {
+		#if mobile
+		mobileMenuControls = false;
+		#end
+
 		FlxG.mouse.visible = true;
 
 		gridCam = new FlxCamera();

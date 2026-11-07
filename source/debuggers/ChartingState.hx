@@ -125,6 +125,10 @@ class ChartingState extends MusicBeatState {
 	var max_zoom:Float = 16;
 
 	override function create() {
+		#if mobile
+		mobileMenuControls = false;
+		#end
+
 		#if NO_PRELOAD_ALL
 		// FOR WHEN COMING IN FROM THE TOOLS PAGE LOL
 		if (Assets.getLibrary("shared") == null)

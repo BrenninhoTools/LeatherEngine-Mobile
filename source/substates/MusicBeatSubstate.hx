@@ -25,8 +25,52 @@ class MusicBeatSubstate extends FlxSubState
 	inline function get_controls():Controls
 		return PlayerSettings.player1.controls;
 
+	#if mobile
+	public var mobileOverlay:mobile.MobileOverlay;
+	public var mobileMenuControls:Bool = true;
+	public var mobileBackButton:Bool = true;
+
+	public function createMobileOverlay():Void
+	{
+		if (mobileOverlay != null || !mobileMenuControls)
+			return;
+
+		mobileOverlay = new mobile.MobileOverlay(true, mobileBackButton);
+	}
+
+	public function removeMobileOverlay():Void
+	{
+		if (mobileOverlay == null)
+			return;
+
+		mobileOverlay.destroy();
+		mobileOverlay = null;
+	}
+
+	override function draw()
+	{
+		super.draw();
+
+		if (mobileOverlay != null && subState == null)
+			mobileOverlay.draw();
+	}
+
+	override function destroy()
+	{
+		removeMobileOverlay();
+		super.destroy();
+	}
+	#end
+
 	override function update(elapsed:Float)
 	{
+		#if mobile
+		createMobileOverlay();
+
+		if (mobileOverlay != null)
+			mobileOverlay.update(elapsed);
+		#end
+
 		var oldStep:Int = curStep;
 
 		updateCurStep();

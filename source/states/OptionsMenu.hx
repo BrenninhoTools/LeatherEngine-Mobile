@@ -41,12 +41,26 @@ class OptionsMenu extends MusicBeatState {
 		"Categories" => [
 			new PageOption("Gameplay", 0, "Gameplay"),
 			new PageOption("Graphics", 1, "Graphics"),
+			#if mobile
+			new PageOption("Mobile", 2, "Mobile"),
+			#else
 			new PageOption("Tools (Very WIP)", 2, "Tools"),
+			#end
 			new PageOption("Misc", 3, "Misc")
 		],
+		#if mobile
+		"Mobile" => [
+			new PageOption("Back", 0, "Categories"),
+			new StringSaveOption("Hitbox Mode", mobile.MobileControls.MODES, 1, "hitboxMode"),
+			new BoolOption("Hitbox Visible", "hitboxVisible", 2),
+			new mobile.StorageUtil.StorageOption("Storage", 3)
+		],
+		#end
 		"Gameplay" => [
 			new PageOption("Back", 0, "Categories"),
+			#if !mobile
 			new GameSubstateOption("Binds", 1, substates.ControlMenuSubstate),
+			#end
 			new BoolOption("Key Bind Reminders", "extraKeyReminders", 2),
 			new GameSubstateOption("Song Offset", 2, substates.SongOffsetMenu),
 			new PageOption("Judgements", 3, "Judgements"),
@@ -172,12 +186,14 @@ class OptionsMenu extends MusicBeatState {
 		if (ui_Skin == null || ui_Skin == "default")
 			ui_Skin = Options.getData("uiSkin");
 
+		#if !mobile
 		if (PlayState.instance == null) {
 			pages["Tools"][1] = null;
 			#if debug
 			pages["Tools"][2] = null;
 			#end
 		}
+		#end
 
 		MusicBeatState.windowNameSuffix = "";
 		instance = this;

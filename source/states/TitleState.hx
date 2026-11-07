@@ -47,6 +47,10 @@ class TitleState extends MusicBeatState {
 	static var doneFlixelSplash:Bool = false;
 
 	override public function create():Void {
+		#if mobile
+		mobileBackButton = false;
+		#end
+
 		MusicBeatState.windowNameSuffix = "";
 
 		if (!firstTimeStarting) {

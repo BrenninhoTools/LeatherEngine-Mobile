@@ -110,6 +110,10 @@ class StageMakingState extends MusicBeatState {
 	}
 
 	override public function create() {
+		#if mobile
+		mobileMenuControls = false;
+		#end
+
 		FlxG.mouse.visible = true;
 
 		stageCam = new FlxCamera();

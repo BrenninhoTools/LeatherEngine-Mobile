@@ -701,9 +701,15 @@ class FlxSound extends FlxBasic {
 			#if openfl_legacy
 			_channel.pitch = v;
 			#else
+			#if (openfl >= "9.3.0")
+			@:privateAccess
+			if (_channel.__audioSource != null)
+				_channel.__audioSource.pitch = v;
+			#else
 			@:privateAccess
 			if (_channel.__source != null)
 				_channel.__source.pitch = v;
+			#end
 			#end
 
 		return _pitch = v;

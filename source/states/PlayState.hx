@@ -11,7 +11,7 @@ import utilities.Discord.DiscordClient;
 import polymod.backends.PolymodAssets;
 #end
 #if VIDEOS_ALLOWED
-import hxcodec.VideoHandler;
+import hxvlc.flixel.FlxVideo;
 #end
 #if MODCHARTING_TOOLS
 import modcharting.ModchartFuncs;
@@ -40,6 +40,7 @@ import modding.ModchartUtilities;
 import lime.app.Application;
 import utilities.NoteVariables;
 import flixel.input.FlxInput.FlxInputState;
+import flixel.input.keyboard.FlxKey;
 import flixel.group.FlxGroup;
 import utilities.Ratings;
 import debuggers.ChartingState;
@@ -579,6 +580,10 @@ class PlayState extends MusicBeatState {
 	override public function create() {
 		// set instance because duh
 		instance = this;
+
+		#if mobile
+		mobileMenuControls = false;
+		#end
 
 		// preload pause music
 		new FlxSound().loadEmbedded(Paths.music('breakfast'));
@@ -1198,6 +1203,10 @@ class PlayState extends MusicBeatState {
 		} else
 			startCountdown();
 
+		#if mobile
+		createMobileControls();
+		#end
+
 		super.create();
 
 		executeALuaState("createPost", []);
@@ -1334,13 +1343,35 @@ class PlayState extends MusicBeatState {
 		}
 
 		#if VIDEOS_ALLOWED
-		var video_handler:VideoHandler = new VideoHandler();
+		var path:String = PolymodAssets.getPath(Paths.video(name, ext));
+		var video:FlxVideo = new FlxVideo();
+		var finished:Bool = false;
 
-		video_handler.finishCallback = () -> {
+		var finish:Void->Void = function() {
+			if (finished)
+				return;
+
+			finished = true;
+			FlxG.removeChild(video);
+			video.dispose();
 			bruhDialogue(endSongVar);
 		};
 
-		video_handler.playVideo(PolymodAssets.getPath(Paths.video(name, ext)));
+		video.onEndReached.add(finish);
+		FlxG.addChildBelowMouse(video);
+
+		var loaded:Bool = false;
+
+		#if sys
+		if (FileSystem.exists(path))
+			loaded = video.load(path);
+		else
+		#end
+		if (openfl.utils.Assets.exists(path))
+			loaded = video.load(openfl.utils.Assets.getBytes(path));
+
+		if (!loaded || !video.play())
+			finish();
 		#else
 		bruhDialogue(endSongVar);
 		#end
@@ -1924,6 +1955,11 @@ class PlayState extends MusicBeatState {
 	var song_info_timer:Float = 0.0;
 
 	override public function update(elapsed:Float) {
+		#if mobile
+		if (mobileTap != null)
+			mobileTap.active = inCutscene;
+		#end
+
 		super.update(elapsed);
 
 		FlxG.camera.followLerp = elapsed * 2.4;
@@ -2707,6 +2743,46 @@ class PlayState extends MusicBeatState {
 	var ogGhostTapping:Bool = Options.getData("ghostTapping");
 	var ogAntiMash:Bool = Options.getData("antiMash");
 
+	#if mobile
+	public var mobileHitbox:mobile.Hitbox;
+	public var mobilePause:mobile.TouchGroup;
+	public var mobileTap:mobile.TouchGestures;
+	public var camControls:FlxCamera;
+
+	function createMobileControls():Void {
+		camControls = new FlxCamera();
+		camControls.bgColor.alpha = 0;
+		FlxG.cameras.add(camControls, false);
+
+		var directions:Array<String> = NoteVariables.Other_Note_Anim_Stuff[binds.length - 1];
+		mobileHitbox = mobile.MobileControls.createHitbox(binds, directions);
+		mobileHitbox.targets = cast playerStrums.members;
+		mobileHitbox.cameras = [camControls];
+		add(mobileHitbox);
+
+		var pauseKey:Int = mobile.MobileControls.keyFromString(Options.getData("pauseBind", "binds"));
+		if (pauseKey < 0)
+			pauseKey = FlxKey.ENTER;
+
+		mobilePause = mobile.MobileControls.createPauseButton(pauseKey);
+		mobilePause.cameras = [camControls];
+		add(mobilePause);
+
+		mobileTap = new mobile.TouchGestures();
+		mobileTap.horizontal = false;
+		mobileTap.vertical = false;
+		mobileTap.active = false;
+		add(mobileTap);
+
+		for (button in mobilePause.buttons) {
+			mobileHitbox.blockers.push(button);
+			mobileTap.ignored.push(button);
+		}
+
+		mobile.TouchKeyBridge.backKeys = [pauseKey];
+	}
+	#end
+
 	public function saveReplay() {
 		if (!playingReplay && !savedReplay) {
 			savedReplay = true;
@@ -2715,6 +2791,9 @@ class PlayState extends MusicBeatState {
 			var json:String = Json.stringify(replay.convertToSwag());
 
 			#if sys
+			if (!FileSystem.exists("assets/replays"))
+				FileSystem.createDirectory("assets/replays");
+
 			sys.io.File.saveContent("assets/replays/replay-" + SONG.song.toLowerCase() + "-" + storyDifficultyStr.toLowerCase() + "-" + time + ".json", json);
 			#end
 		}

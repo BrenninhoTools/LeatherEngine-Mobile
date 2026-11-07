@@ -159,6 +159,10 @@ class ModchartUtilities {
 		lua = LuaL.newstate();
 		LuaL.openlibs(lua);
 
+		#if mobile
+		mobile.LuaSource.init();
+		#end
+
 		trace("lua version: " + Lua.version());
 		trace("LuaJIT version: " + Lua.versionJIT());
 

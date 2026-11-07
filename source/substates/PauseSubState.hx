@@ -40,6 +40,10 @@ class PauseSubState extends MusicBeatSubstate {
 	public function new() {
 		super();
 
+		#if mobile
+		mobileBackButton = false;
+		#end
+
 		pauseCamera.bgColor.alpha = 0;
 		FlxG.cameras.add(pauseCamera, false);
 

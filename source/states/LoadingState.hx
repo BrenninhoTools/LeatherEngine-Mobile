@@ -38,6 +38,10 @@ class LoadingState extends MusicBeatState
 	
 	override function create()
 	{
+		#if mobile
+		mobileBackButton = false;
+		#end
+
 		MusicBeatState.windowNameSuffix = " is loading...";
 
 		instance = this;

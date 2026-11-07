@@ -13,8 +13,12 @@ class FlashingLightsMenu extends MusicBeatState {
 	override public function create() {
 		super.create();
 
+		#if mobile
+		text = new FlxText(0, 0, 0, "Hey! Leather Engine has flashing lights\nTap the screen to enable them, or press Back to not.", 32);
+		#else
 		text = new FlxText(0, 0, 0, "Hey! Leather Engine has flashing lights\nPress Y to enable them, or anything else to not.\n(Any key closes this menu)",
 			32);
+		#end
 		text.font = Paths.font("vcr.ttf");
 		text.screenCenter();
 		text.setBorderStyle(OUTLINE, FlxColor.BLACK, 1.5, 1);
@@ -24,12 +28,20 @@ class FlashingLightsMenu extends MusicBeatState {
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 
-		if (FlxG.keys.justPressed.Y)
+		#if mobile
+		var enable:Bool = FlxG.keys.justPressed.ENTER;
+		var disable:Bool = FlxG.keys.justPressed.ESCAPE;
+		#else
+		var enable:Bool = FlxG.keys.justPressed.Y;
+		var disable:Bool = !enable && FlxG.keys.justPressed.ANY;
+		#end
+
+		if (enable)
 			Options.setData(true, "flashingLights");
-		else if (!FlxG.keys.justPressed.Y && FlxG.keys.justPressed.ANY)
+		else if (disable)
 			Options.setData(false, "flashingLights");
 
-		if (FlxG.keys.justPressed.ANY) {
+		if (enable || disable) {
 			FlxG.sound.play(Paths.sound("confirmMenu"));
 
 			FlxTween.tween(text, {alpha: 0}, 2.5, {

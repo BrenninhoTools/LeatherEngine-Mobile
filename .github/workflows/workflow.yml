@@ -1,184 +1,222 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Build
 
-# Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ ]
+    branches: [ main ]
+    paths-ignore: [ '**.md', 'docs/**', 'art/**' ]
   pull_request:
-    branches: [ ]
+    branches: [ main ]
+    paths-ignore: [ '**.md', 'docs/**', 'art/**' ]
+  workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HAXE_VERSION: 4.3.7
+
 jobs:
-  # This workflow contains a single job called "build"
-  buildLinux:
-    # The type of runner that the job will run on
+  buildAndroid:
+    name: Android
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-
-      - uses: krdlab/setup-haxe@master
+      - uses: actions/checkout@v4
         with:
-          haxe-version: 4.2.5
-      # Runs a set of commands using the runners shell
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/docs/
+            !/hello_leather_engine_fans.gif
+
+      - name: Use Java 17
+        run: echo "JAVA_HOME=$JAVA_HOME_17_X64" >> $GITHUB_ENV
+
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r21e
+          local-cache: true
+
+      - uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Restore Haxelib Cache
+        id: haxelib-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-android-${{ env.HAXE_VERSION }}-${{ hashFiles('.github/scripts/install-libs.sh') }}
+
+      - name: Restore hxcpp Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.hxcpp_cache
+          key: hxcpp-android-${{ github.sha }}
+          restore-keys: hxcpp-android-
+
+      - name: Restore Gradle Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('Project.xml', '.github/scripts/install-libs.sh') }}
+          restore-keys: gradle-
+
       - name: Install Haxelib
         run: |
+          mkdir -p ~/.hxcpp_cache
+          echo "HXCPP_COMPILE_CACHE=$HOME/.hxcpp_cache" >> $GITHUB_ENV
+          echo "HXCPP_COMPILE_THREADS=$(nproc)" >> $GITHUB_ENV
+          echo "GRADLE_OPTS=-Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.vfs.watch=false" >> $GITHUB_ENV
           haxelib setup ~/haxelib
-          haxelib install hxcpp > /dev/null
-          haxelib install lime
-          haxelib install openfl
-          haxelib --never install flixel
-          haxelib run lime setup flixel
-          haxelib run lime setup
-          haxelib install flixel-tools
-          haxelib install flixel-ui
-          haxelib install flixel-addons
-          haxelib git linc_luajit https://github.com/Leather128/linc_luajit.git
-          haxelib install hscript
-          haxelib install polymod
-          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec
-          haxelib git discord_rpc https://github.com/Aidan63/linc_discord-rpc
-          haxelib git flixelTextureAtlas https://github.com/Smokey555/Flixel-TextureAtlas.git
-          haxelib git fnf-modcharting-tools https://github.com/TheZoroForce240/FNF-Modcharting-Tools
-          haxelib install hxcpp-debug-server
-          haxelib list
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      - name: Compile Linux
-        run: haxelib run lime build Project.xml linux --app-version="4.0.0-${{ github.run_id}}"
-      - name: Publish Linux Artifact
-        uses: actions/upload-artifact@v2.2.4
-        with:
-          name: linuxBuild
-          path: 'export/release/linux/bin' 
+          if [ "${{ steps.haxelib-cache.outputs.cache-hit }}" != "true" ]; then
+            sh ./.github/scripts/install-libs.sh
+          fi
 
-  buildHTML5:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.2.5
-      # Runs a set of commands using the runners shell
-      - name: Install Haxelib
+      - name: Use Bundled Lua
         run: |
-          haxelib setup ~/haxelib
-          haxelib install hxcpp > /dev/null
-          haxelib install lime
-          haxelib install openfl
-          haxelib --never install flixel
-          haxelib run lime setup flixel
-          haxelib run lime setup
-          haxelib install flixel-tools
-          haxelib install flixel-ui
-          haxelib install flixel-addons
-          haxelib install polymod
-          haxelib git openfl https://github.com/openfl/openfl
-          haxelib git flixelTextureAtlas https://github.com/Smokey555/Flixel-TextureAtlas.git
-          haxelib git fnf-modcharting-tools https://github.com/TheZoroForce240/FNF-Modcharting-Tools
-          haxelib list
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      - name: Compile HTML5
-        run: haxelib run lime build Project.xml html5 --app-version="4.0.0-${{ github.run_id}}"
-      - name: Publish HTMl5 Artifact
-        uses: actions/upload-artifact@v2.2.4
-        with:
-          name: html5Build
-          path: 'export/release/html5/bin' 
+          LUA_PATH=$(haxelib libpath linc_luajit)
+          for LIB in "$LUA_PATH"/lib/lua/lib/Android/*.a; do printf '!<arch>\n' > "$LIB"; done
 
-  buildWindows:
-    runs-on: windows-latest
-    
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2.3.0
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.2.5
-      # Runs a set of commands using the runners shell
-      - name: Install Haxelib
+      - name: Configure Android
         run: |
-          haxelib setup C:/haxelib
-          haxelib install hxcpp > nul
-          haxelib install lime
-          haxelib install openfl
-          haxelib --never install flixel
-          haxelib run lime setup flixel
-          haxelib run lime setup
-          haxelib install flixel-tools
-          haxelib install flixel-ui
-          haxelib install flixel-addons
-          haxelib git linc_luajit https://github.com/Leather128/linc_luajit.git
-          haxelib install hscript
-          haxelib install polymod
-          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec
-          haxelib git openfl https://github.com/openfl/openfl
-          haxelib git discord_rpc https://github.com/Aidan63/linc_discord-rpc
-          haxelib git flixelTextureAtlas https://github.com/Smokey555/Flixel-TextureAtlas.git
-          haxelib git fnf-modcharting-tools https://github.com/TheZoroForce240/FNF-Modcharting-Tools
-          haxelib install hxcpp-debug-server
-          haxelib list
-        shell: cmd
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT ${{ steps.setup-ndk.outputs.ndk-path }}
+          haxelib run lime config JAVA_HOME $JAVA_HOME
+          haxelib run lime config ANDROID_SETUP true
+
+      - name: Prepare Signing Key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          KEYSTORE="$RUNNER_TEMP/release.keystore"
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE"
+            echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> $GITHUB_ENV
+            echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> $GITHUB_ENV
+            echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD" >> $GITHUB_ENV
+          else
+            keytool -genkeypair -keystore "$KEYSTORE" -storepass android -keypass android -alias leather -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=LeatherEngine,O=BrenninhoTools,C=BR"
+            echo "ANDROID_KEYSTORE_PASSWORD=android" >> $GITHUB_ENV
+            echo "ANDROID_KEY_ALIAS=leather" >> $GITHUB_ENV
+            echo "ANDROID_KEY_PASSWORD=android" >> $GITHUB_ENV
+          fi
+          echo "ANDROID_KEYSTORE=$KEYSTORE" >> $GITHUB_ENV
+
       - name: Compile
-        run: haxelib run lime build windows --app-version="4.0.0-${{ github.run_id}}"
+        run: |
+          set -o pipefail
+          if ! haxelib run lime build android -final -D ANDROID_SIGNING 2>&1 | tee compile.log; then
+            grep -n -i -E "error|failed|exception" compile.log | tail -n 40 > errors.log || true
+            echo "::error title=lime build android::$(sed 's/%/%25/g' errors.log | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          fi
+
+      - name: Collect APK
+        run: |
+          APK=$(find export/release/android/bin/app/build/outputs/apk -name "*.apk" | head -n 1)
+          if [ -z "$APK" ]; then echo "APK not found"; exit 1; fi
+          mkdir -p dist
+          cp "$APK" dist/LeatherEngine.apk
+
       - name: Publish Artifact
-        uses: actions/upload-artifact@v2.2.4
+        uses: actions/upload-artifact@v4
         with:
-          name: windowsBuild
-          path: export/release/windows/bin
-  buildMac:
-    runs-on: macos-latest
+          name: androidBuild
+          path: dist/LeatherEngine.apk
+          if-no-files-found: error
+          compression-level: 0
+
+  buildiOS:
+    name: iOS
+    runs-on: macos-15
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-
-      - uses: krdlab/setup-haxe@master
+      - uses: actions/checkout@v4
         with:
-          haxe-version: 4.2.5
-      # Runs a set of commands using the runners shell
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/docs/
+            !/hello_leather_engine_fans.gif
+
+      - uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Restore Haxelib Cache
+        id: haxelib-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-ios-${{ env.HAXE_VERSION }}-${{ hashFiles('.github/scripts/install-libs.sh') }}
+
+      - name: Restore hxcpp Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.hxcpp_cache
+          key: hxcpp-ios-${{ github.sha }}
+          restore-keys: hxcpp-ios-
+
       - name: Install Haxelib
         run: |
-          haxelib setup ~/haxelib
-          haxelib install hxcpp > /dev/null
-          haxelib install lime
-          haxelib install openfl
-          haxelib --never install flixel
-          haxelib run lime setup flixel
-          haxelib run lime setup
-          haxelib install flixel-tools
-          haxelib install flixel-ui
-          haxelib install flixel-addons
-          haxelib git linc_luajit https://github.com/Leather128/linc_luajit.git
-          haxelib install hscript
-          haxelib install polymod
-          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec
-          haxelib git openfl https://github.com/openfl/openfl
-          haxelib git discord_rpc https://github.com/Aidan63/linc_discord-rpc
-          haxelib git flixelTextureAtlas https://github.com/Smokey555/Flixel-TextureAtlas.git
-          haxelib git fnf-modcharting-tools https://github.com/TheZoroForce240/FNF-Modcharting-Tools
-          haxelib install hxcpp-debug-server
-          haxelib list
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
+          mkdir -p ~/.hxcpp_cache
+          echo "HXCPP_COMPILE_CACHE=$HOME/.hxcpp_cache" >> $GITHUB_ENV
+          echo "HXCPP_COMPILE_THREADS=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
+          arch -x86_64 haxelib setup ~/haxelib
+          if [ "${{ steps.haxelib-cache.outputs.cache-hit }}" != "true" ]; then
+            arch -x86_64 /bin/sh ./.github/scripts/install-libs.sh
+          fi
+
+      - name: Use Bundled Lua
+        run: |
+          LUA_PATH=$(arch -x86_64 haxelib libpath linc_luajit)
+          mkdir -p "$LUA_PATH/lib/lua/lib/iPhone"
+          printf '!<arch>\n' > "$LUA_PATH/lib/lua/lib/iPhone/libluajit.iphoneos-64.a"
+          printf '!<arch>\n' > "$LUA_PATH/lib/lua/lib/iPhone/libluajit.iphonesim-64.a"
+
+      - name: Generate Xcode Project
+        run: |
+          arch -x86_64 haxelib run lime update ios 2>&1 | tee compile.log || true
+          if ! ls export/release/ios/*.xcodeproj > /dev/null 2>&1; then
+            echo "::error title=lime update ios::$(tail -n 60 compile.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          fi
+
       - name: Compile
-        run: haxelib run lime build mac --app-version="4.0.0-${{ github.run_id}}"
+        run: |
+          set -o pipefail
+          cd export/release/ios
+          PROJECT=$(find . -maxdepth 1 -name "*.xcodeproj" | head -n 1)
+          if ! xcodebuild -project "$PROJECT" -configuration Release -sdk iphoneos -arch arm64 -jobs $(sysctl -n hw.ncpu) \
+            ONLY_ACTIVE_ARCH=YES COMPILER_INDEX_STORE_ENABLE=NO DEBUG_INFORMATION_FORMAT=dwarf \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tee ../../../xcode.log; then
+            grep -n -E "error:|Error |\*\* BUILD FAILED" ../../../xcode.log | tail -n 40 > ../../../errors.log || true
+            echo "::error title=xcodebuild::$(sed 's/%/%25/g' ../../../errors.log | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          fi
+
+      - name: Package IPA
+        run: |
+          APP=$(find export/release/ios/build -type d -name "*.app" -path "*iphoneos*" | head -n 1)
+          if [ -z "$APP" ]; then echo "No .app found"; exit 1; fi
+          mkdir -p ipa/Payload
+          cp -R "$APP" ipa/Payload/
+          cd ipa && zip -qry -1 ../LeatherEngine.ipa Payload
+
       - name: Publish Artifact
-        uses: actions/upload-artifact@v2.2.4
+        uses: actions/upload-artifact@v4
         with:
-          name: macBuild
-          path: export/release/macos/bin
+          name: iOSBuild
+          path: LeatherEngine.ipa
+          if-no-files-found: error
+          compression-level: 0

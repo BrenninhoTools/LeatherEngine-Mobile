@@ -13,7 +13,7 @@ haxelib install openfl 9.5.2
 haxelib install flixel 6.2.1
 haxelib install flixel-addons 4.0.1
 haxelib install hscript 2.7.0
-haxelib install polymod 2.0.0
+haxelib install polymod 1.8.0
 haxelib install hxvlc 2.3.2 --skip-dependencies
 haxelib git flixel-ui https://github.com/HaxeFlixel/flixel-ui ff2f30148cb1a7c9b10373aa89cf1e0d7aafb648
 haxelib git flixelTextureAtlas https://github.com/Smokey555/Flixel-TextureAtlas 4c6c8e1529156e753937ad13cd28f189f0cbc218

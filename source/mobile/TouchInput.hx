@@ -60,6 +60,7 @@ class TouchInput
 			return;
 
 		ready = true;
+		openfl.ui.Multitouch.inputMode = openfl.ui.MultitouchInputMode.TOUCH_POINT;
 		Lib.current.stage.addEventListener(TouchEvent.TOUCH_BEGIN, onBegin);
 		Lib.current.stage.addEventListener(TouchEvent.TOUCH_MOVE, onMove);
 		Lib.current.stage.addEventListener(TouchEvent.TOUCH_END, onEnd);

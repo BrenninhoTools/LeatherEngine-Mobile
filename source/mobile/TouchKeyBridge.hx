@@ -13,6 +13,7 @@ class TouchKeyBridge
 
 	static var sources:Array<TouchKeySource> = [];
 	static var held:Array<Int> = [];
+	static var retriggers:Array<Int> = [];
 	static var ready:Bool = false;
 
 	public static function register(source:TouchKeySource):Void
@@ -43,6 +44,12 @@ class TouchKeyBridge
 		FlxG.signals.preStateSwitch.add(clear);
 	}
 
+	public static function retrigger(code:Int):Void
+	{
+		if (code >= 0 && !retriggers.contains(code))
+			retriggers.push(code);
+	}
+
 	public static function isActive(lastUpdateFrame:Int):Bool
 	{
 		return lastUpdateFrame == frame - 1;
@@ -59,6 +66,7 @@ class TouchKeyBridge
 	static function sync():Void
 	{
 		var wanted:Array<Int> = [];
+		retriggers = [];
 		for (source in sources.copy())
 			source.collectKeys(wanted);
 
@@ -85,12 +93,20 @@ class TouchKeyBridge
 				setKey(code, true);
 				held.push(code);
 			}
+			else if (retriggers.contains(code))
+			{
+				setKey(code, false);
+				setKey(code, true);
+			}
 		}
+
+		retriggers = [];
 	}
 
 	static function clear():Void
 	{
 		held = [];
+		retriggers = [];
 		backKeys = [FlxKey.ESCAPE];
 	}
 

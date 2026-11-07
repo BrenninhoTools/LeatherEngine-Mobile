@@ -40,7 +40,7 @@ jobs:
           ndk-version: r21e
           local-cache: true
 
-      - uses: krdlab/setup-haxe@v1
+      - uses: krdlab/setup-haxe@master
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
 
@@ -149,7 +149,7 @@ jobs:
             !/docs/
             !/hello_leather_engine_fans.gif
 
-      - uses: krdlab/setup-haxe@v1
+      - uses: krdlab/setup-haxe@master
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
 

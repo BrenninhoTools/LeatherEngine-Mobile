@@ -114,6 +114,38 @@ class CopyState extends FlxState
 		return false;
 	}
 
+	static function readBytes(id:String):haxe.io.Bytes
+	{
+		try
+		{
+			return Assets.getBytes(id);
+		}
+		catch (e:Dynamic)
+		{
+			return null;
+		}
+	}
+
+	static function readText(id:String):String
+	{
+		try
+		{
+			var text:String = Assets.getText(id);
+			if (text != null)
+				return text;
+		}
+		catch (e:Dynamic) {}
+
+		try
+		{
+			return lime.utils.Assets.getText(id);
+		}
+		catch (e:Dynamic)
+		{
+			return null;
+		}
+	}
+
 	function copy(id:String):Void
 	{
 		#if sys
@@ -122,11 +154,17 @@ class CopyState extends FlxState
 			var target:String = StorageUtil.directory + id;
 			StorageUtil.createDirectory(Path.directory(target));
 
-			var bytes = Assets.getBytes(id);
-			if (bytes == null)
-				throw "missing";
+			var bytes = readBytes(id);
+			if (bytes != null)
+				File.saveBytes(target, bytes);
+			else
+			{
+				var text:String = readText(id);
+				if (text == null && !Assets.exists(id))
+					throw "missing";
 
-			File.saveBytes(target, bytes);
+				File.saveContent(target, text != null ? text : "");
+			}
 		}
 		catch (e:Dynamic)
 		{

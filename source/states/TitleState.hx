@@ -328,7 +328,11 @@ class TitleState extends MusicBeatState {
 					FlxG.switchState(new MainMenuState()); // fail so we go anyway
 				}
 
-				http.request();
+				try {
+					http.request();
+				} catch (e:Dynamic) {
+					FlxG.switchState(new MainMenuState());
+				}
 			});
 		}
 

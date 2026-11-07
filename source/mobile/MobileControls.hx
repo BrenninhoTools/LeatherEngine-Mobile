@@ -70,7 +70,7 @@ class MobileControls
 	{
 		var group:TouchGroup = new TouchGroup();
 		var button:TouchButton = new TouchButton(0, 0, [FlxKey.ESCAPE, FlxKey.BACKSPACE]);
-		button.loadAnimated(Paths.getSparrowAtlas('mobile/backButton', 'shared'), 'back', 105);
+		button.loadAnimated(Paths.getSparrowAtlas('mobile/backButton', 'shared'), 'back', 140);
 		button.setPosition(FlxG.width - button.width - 18, FlxG.height - button.height - 18);
 		group.addButton(button);
 		return group;

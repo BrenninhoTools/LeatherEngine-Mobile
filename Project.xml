@@ -112,6 +112,10 @@
 	<section if="android">
 		<config:android min-sdk-version="21" target-sdk-version="34" />
 		<architecture name="arm64" exclude="armv7" />
+		<android permission="android.permission.WAKE_LOCK" />
+		<android permission="android.permission.INTERNET" />
+		<android permission="android.permission.VIBRATE" />
+		<android permission="android.permission.ACCESS_NETWORK_STATE" />
 		<android permission="android.permission.READ_EXTERNAL_STORAGE" />
 		<android permission="android.permission.WRITE_EXTERNAL_STORAGE" />
 		<android permission="android.permission.MANAGE_EXTERNAL_STORAGE" />

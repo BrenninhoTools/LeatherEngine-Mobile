@@ -13,6 +13,8 @@ haxelib install openfl 9.5.2
 haxelib install flixel 6.2.0
 haxelib install flixel-addons 4.0.1
 haxelib install hscript 2.7.0
+haxelib git thx.core https://github.com/fponticelli/thx.core 2bf2b992e06159510f595554e6b952e47922f128
+haxelib git thx.semver https://github.com/fponticelli/thx.semver bdb191fe7cf745c02a980749906dbf22719e200b
 haxelib install polymod 1.8.0
 haxelib install hxvlc 2.3.2 --skip-dependencies
 haxelib git flixel-ui https://github.com/HaxeFlixel/flixel-ui ff2f30148cb1a7c9b10373aa89cf1e0d7aafb648

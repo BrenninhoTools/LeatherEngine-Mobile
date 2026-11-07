@@ -1,4 +1,4 @@
-name: Android Build
+name: Build
 
 on:
   push:
@@ -139,3 +139,88 @@ jobs:
           if-no-files-found: error
           compression-level: 0
 
+  buildiOS:
+    name: iOS
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/docs/
+            !/hello_leather_engine_fans.gif
+
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Restore Haxelib Cache
+        id: haxelib-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-ios-${{ env.HAXE_VERSION }}-${{ hashFiles('.github/scripts/install-libs.sh') }}
+
+      - name: Restore hxcpp Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.hxcpp_cache
+          key: hxcpp-ios-${{ github.sha }}
+          restore-keys: hxcpp-ios-
+
+      - name: Install Haxelib
+        run: |
+          mkdir -p ~/.hxcpp_cache
+          echo "HXCPP_COMPILE_CACHE=$HOME/.hxcpp_cache" >> $GITHUB_ENV
+          echo "HXCPP_COMPILE_THREADS=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
+          arch -x86_64 haxelib setup ~/haxelib
+          if [ "${{ steps.haxelib-cache.outputs.cache-hit }}" != "true" ]; then
+            arch -x86_64 /bin/sh ./.github/scripts/install-libs.sh
+          fi
+
+      - name: Use Bundled Lua
+        run: |
+          LUA_PATH=$(arch -x86_64 haxelib libpath linc_luajit)
+          mkdir -p "$LUA_PATH/lib/lua/lib/iPhone"
+          printf '!<arch>\n' > "$LUA_PATH/lib/lua/lib/iPhone/libluajit.iphoneos-64.a"
+          printf '!<arch>\n' > "$LUA_PATH/lib/lua/lib/iPhone/libluajit.iphonesim-64.a"
+
+      - name: Generate Xcode Project
+        run: |
+          arch -x86_64 haxelib run lime update ios 2>&1 | tee compile.log || true
+          if ! ls export/release/ios/*.xcodeproj > /dev/null 2>&1; then
+            echo "::error title=lime update ios::$(tail -n 60 compile.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          fi
+
+      - name: Compile
+        run: |
+          set -o pipefail
+          cd export/release/ios
+          PROJECT=$(find . -maxdepth 1 -name "*.xcodeproj" | head -n 1)
+          if ! xcodebuild -project "$PROJECT" -configuration Release -sdk iphoneos -arch arm64 -jobs $(sysctl -n hw.ncpu) \
+            ONLY_ACTIVE_ARCH=YES COMPILER_INDEX_STORE_ENABLE=NO DEBUG_INFORMATION_FORMAT=dwarf \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tee ../../../xcode.log; then
+            grep -n -E "error:|Error |\*\* BUILD FAILED" ../../../xcode.log | tail -n 40 > ../../../errors.log || true
+            echo "::error title=xcodebuild::$(sed 's/%/%25/g' ../../../errors.log | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          fi
+
+      - name: Package IPA
+        run: |
+          APP=$(find export/release/ios/build -type d -name "*.app" -path "*iphoneos*" | head -n 1)
+          if [ -z "$APP" ]; then echo "No .app found"; exit 1; fi
+          mkdir -p ipa/Payload
+          cp -R "$APP" ipa/Payload/
+          cd ipa && zip -qry -1 ../LeatherEngine.ipa Payload
+
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iOSBuild
+          path: LeatherEngine.ipa
+          if-no-files-found: error
+          compression-level: 0

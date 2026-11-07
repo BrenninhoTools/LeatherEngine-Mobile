@@ -207,6 +207,29 @@ class MainMenuState extends MusicBeatState
 		});
 	}
 
+	#if mobile
+	override public function onMobileTap(x:Float, y:Float):Bool
+	{
+		if (selectedSomethin)
+			return true;
+
+		for (spr in menuItems.members)
+		{
+			if (spr == null || !spr.alive || !mobile.TouchInput.overlaps(spr, x, y))
+				continue;
+
+			if (spr.ID == curSelected)
+				return false;
+
+			FlxG.sound.play(Paths.sound('scrollMenu'));
+			changeItem(spr.ID - curSelected);
+			return true;
+		}
+
+		return true;
+	}
+	#end
+
 	function fard()
 	{
 		var daChoice:String = optionShit[curSelected];

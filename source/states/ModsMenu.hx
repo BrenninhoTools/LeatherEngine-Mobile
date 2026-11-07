@@ -94,16 +94,40 @@ class ModsMenu extends MusicBeatState
 		descriptionText.screenCenter(X);
 		add(descriptionText);
 
-		var leText:String = "Press ENTER to enable / disable the currently selected mod.";
+		var leText:String = #if mobile "Tap the selected mod to enable / disable it." #else "Press ENTER to enable / disable the currently selected mod." #end;
 
 		var text:FlxText = new FlxText(0, FlxG.height - 22, FlxG.width, leText, 18);
-		text.setFormat(Paths.font("vcr.ttf"), 18, FlxColor.WHITE, RIGHT);
+		text.setFormat(Paths.font("vcr.ttf"), 18, FlxColor.WHITE, #if mobile LEFT #else RIGHT #end);
 		text.scrollFactor.set();
 		text.borderColor = FlxColor.BLACK;
 		text.borderSize = 1;
 		text.borderStyle = OUTLINE;
 		add(text);
 	}
+
+	#if mobile
+	override public function onMobileTap(x:Float, y:Float):Bool
+	{
+		for (i in 0...page.members.length)
+		{
+			var option:ModOption = page.members[i];
+			if (option == null || !option.exists)
+				continue;
+
+			if (!mobile.TouchInput.overlaps(option.Alphabet_Text, x, y, 8) && !mobile.TouchInput.overlaps(option.Mod_Icon, x, y, 8))
+				continue;
+
+			if (i == curSelected)
+				return false;
+
+			curSelected = i;
+			FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
+			return true;
+		}
+
+		return true;
+	}
+	#end
 
 	function loadMods()
 	{

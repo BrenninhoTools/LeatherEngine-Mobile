@@ -327,7 +327,9 @@ class FreeplayState extends MusicBeatState {
 		if (curSpeed < 0.25)
 			curSpeed = 0.25;
 
-		#if sys
+		#if mobile
+		speedText.text = "< Speed: " + curSpeed + " >";
+		#elseif sys
 		speedText.text = "Speed: " + curSpeed + " (R+SHIFT)";
 		#else
 		speedText.text = "";
@@ -383,7 +385,11 @@ class FreeplayState extends MusicBeatState {
 			}
 
 			#if PRELOAD_ALL
-			if (FlxG.keys.justPressed.SPACE) {
+			if (FlxG.keys.justPressed.SPACE #if mobile || mobilePreview #end) {
+				#if mobile
+				mobilePreview = false;
+				#end
+
 				destroyFreeplayVocals();
 
 				if (Assets.exists(Paths.voices(songs[curSelected].songName.toLowerCase(), curDiffString.toLowerCase())))
@@ -476,6 +482,48 @@ class FreeplayState extends MusicBeatState {
 		FlxG.mouse.visible = false;
 		super.closeSubState();
 	}
+
+	#if mobile
+	var mobilePreview:Bool = false;
+
+	override public function onMobileTap(x:Float, y:Float):Bool {
+		if (!songsReady)
+			return true;
+
+		if (mobile.TouchInput.overlaps(diffText, x, y, 12)) {
+			changeDiff(x < diffText.x + diffText.width / 2 ? -1 : 1);
+			return true;
+		}
+
+		#if sys
+		if (mobile.TouchInput.overlaps(speedText, x, y, 12)) {
+			curSpeed = FlxMath.roundDecimal(curSpeed + (x < speedText.x + speedText.width / 2 ? -0.05 : 0.05), 2);
+			if (curSpeed < 0.1)
+				curSpeed = 0.1;
+			return true;
+		}
+		#end
+
+		if (iconArray.length > curSelected && iconArray[curSelected] != null && mobile.TouchInput.overlaps(iconArray[curSelected], x, y, 8)) {
+			mobilePreview = true;
+			return true;
+		}
+
+		for (i in 0...grpSongs.members.length) {
+			var item:Alphabet = grpSongs.members[i];
+			if (item == null || !item.visible || !mobile.TouchInput.overlaps(item, x, y, 8))
+				continue;
+
+			if (i == curSelected)
+				return false;
+
+			changeSelection(i - curSelected);
+			return true;
+		}
+
+		return true;
+	}
+	#end
 
 	function changeDiff(change:Int = 0) {
 		curDifficulty = FlxMath.wrap(curDifficulty + change, 0, curDiffArray.length - 1);

@@ -346,6 +346,47 @@ class StoryMenuState extends MusicBeatState {
 	var lerpScore:Int = 0;
 	var intendedScore:Int = 0;
 
+	#if mobile
+	override public function onMobileTap(x:Float, y:Float):Bool {
+		if (movedBack || selectedWeek)
+			return true;
+
+		if (mobile.TouchInput.overlaps(leftArrow, x, y, 16)) {
+			leftArrow.animation.play('press', true);
+			changeDifficulty(-1);
+			return true;
+		}
+
+		if (mobile.TouchInput.overlaps(rightArrow, x, y, 16)) {
+			rightArrow.animation.play('press', true);
+			changeDifficulty(1);
+			return true;
+		}
+
+		if (mobile.TouchInput.overlaps(difficultySprite, x, y, 8))
+			return false;
+
+		if (mobile.TouchInput.overlaps(groupSwitchText, x, y, 12)) {
+			changeGroup(x < groupSwitchText.x + groupSwitchText.width / 2 ? -1 : 1);
+			return true;
+		}
+
+		for (i in 0...weekGraphics.members.length) {
+			var item:MenuItem = weekGraphics.members[i];
+			if (item == null || !item.visible || !mobile.TouchInput.overlaps(item, x, y))
+				continue;
+
+			if (i == curWeek)
+				return false;
+
+			changeWeek(i - curWeek);
+			return true;
+		}
+
+		return true;
+	}
+	#end
+
 	function changeWeek(change:Int = 0):Void {
 		curWeek = FlxMath.wrap(curWeek + change, 0, currentGroup.weeks.length - 1);
 

@@ -36,6 +36,14 @@ class MusicBeatSubstate extends FlxSubState
 			return;
 
 		mobileOverlay = new mobile.MobileOverlay(true, mobileBackButton);
+
+		if (mobileOverlay.gestures != null)
+			mobileOverlay.gestures.onTap = onMobileTap;
+	}
+
+	public function onMobileTap(x:Float, y:Float):Bool
+	{
+		return false;
 	}
 
 	public function removeMobileOverlay():Void

@@ -8,7 +8,7 @@ haxelib install "${RUNNER_TEMP:-/tmp}/hxcpp.zip" --quiet --never
 
 haxelib install lime 8.3.2 --quiet --never
 haxelib install openfl 9.5.2 --quiet --never
-haxelib install flixel 6.2.1 --quiet --never
+haxelib install flixel 6.2.0 --quiet --never
 haxelib install flixel-addons 4.0.1 --quiet --never
 haxelib install hscript 2.7.0 --quiet --never
 haxelib install polymod 1.8.0 --quiet --never
@@ -20,7 +20,7 @@ haxelib git extension-androidtools https://github.com/MAJigsaw77/extension-andro
 
 haxelib set lime 8.3.2 --never
 haxelib set openfl 9.5.2 --never
-haxelib set flixel 6.2.1 --never
+haxelib set flixel 6.2.0 --never
 haxelib set flixel-addons 4.0.1 --never
 haxelib set hscript 2.7.0 --never
 haxelib set polymod 1.8.0 --never

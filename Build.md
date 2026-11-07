@@ -10,7 +10,7 @@ Step 3. Run these commands to install the libraries required (the same versions 
 curl -L -o hxcpp.zip https://github.com/HaxeFoundation/hxcpp/releases/download/v4.3.184/hxcpp-4.3.184.zip && haxelib install hxcpp.zip
 haxelib install lime 8.3.2
 haxelib install openfl 9.5.2
-haxelib install flixel 6.2.1
+haxelib install flixel 6.2.0
 haxelib install flixel-addons 4.0.1
 haxelib install hscript 2.7.0
 haxelib install polymod 1.8.0

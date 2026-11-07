@@ -51,7 +51,7 @@ jobs:
           key: haxelib-android-${{ env.HAXE_VERSION }}-${{ hashFiles('.github/scripts/install-libs.sh') }}
 
       - name: Restore hxcpp Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/.hxcpp_cache
           key: hxcpp-android-${{ github.sha }}
@@ -124,6 +124,13 @@ jobs:
             exit 1
           fi
 
+      - name: Save hxcpp Cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.hxcpp_cache
+          key: hxcpp-android-${{ github.sha }}
+
       - name: Collect APK
         run: |
           APK=$(find export/release/android/bin/app/build/outputs/apk -name "*.apk" | head -n 1)
@@ -165,7 +172,7 @@ jobs:
           key: haxelib-ios-${{ env.HAXE_VERSION }}-${{ hashFiles('.github/scripts/install-libs.sh') }}
 
       - name: Restore hxcpp Cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/.hxcpp_cache
           key: hxcpp-ios-${{ github.sha }}
@@ -208,6 +215,13 @@ jobs:
             echo "::error title=xcodebuild::$(sed 's/%/%25/g' ../../../errors.log | awk '{printf "%s%%0A", $0}')"
             exit 1
           fi
+
+      - name: Save hxcpp Cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.hxcpp_cache
+          key: hxcpp-ios-${{ github.sha }}
 
       - name: Package IPA
         run: |

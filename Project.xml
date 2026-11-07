@@ -101,7 +101,6 @@
 	<haxedef name="FLX_NO_FOCUS_LOST_SCREEN" />
 	<haxedef name="FLX_NO_DEBUG" unless="debug" />
 	<haxedef name="NAPE_RELEASE_BUILD" unless="debug" />
-	<haxedef name="HXCPP_GC_BIG_BLOCKS" />
 	<haxedef name="HXCPP_CHECK_POINTER" if="mobile release" />
 	<haxedef name="HXCPP_STACK_LINE" if="mobile release" />
 	<haxedef name="HXCPP_STACK_TRACE" if="mobile release" />

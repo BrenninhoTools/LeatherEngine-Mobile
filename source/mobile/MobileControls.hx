@@ -83,12 +83,17 @@ class MobileControls
 		return group;
 	}
 
+	public static function placeBackButton(button:TouchButton):Void
+	{
+		button.setPosition(FlxG.width - button.width - 18 - ScreenUtil.gameInset(2), FlxG.height - button.height - 18 - ScreenUtil.gameInset(3));
+	}
+
 	public static function createBackButton():TouchGroup
 	{
 		var group:TouchGroup = new TouchGroup();
 		var button:TouchButton = new TouchButton(0, 0, [FlxKey.ESCAPE, FlxKey.BACKSPACE]);
 		button.loadAnimated(Paths.getSparrowAtlas('mobile/backButton', 'shared'), 'back', 180);
-		button.setPosition(FlxG.width - button.width - 18 - ScreenUtil.gameInset(2), FlxG.height - button.height - 18 - ScreenUtil.gameInset(3));
+		placeBackButton(button);
 		group.addButton(button);
 		return group;
 	}

@@ -34,6 +34,8 @@ class Main extends Sprite {
 		display.multiline = true;
 
 		mobile.ScreenUtil.apply();
+		hideMouse();
+		flixel.FlxG.signals.preDraw.add(hideMouse);
 		flixel.FlxG.signals.gameResized.add((_, _) -> updateDisplayLayout());
 		flixel.FlxG.signals.postDraw.add(drawDisplayBackground);
 		updateDisplayLayout();
@@ -70,6 +72,13 @@ class Main extends Sprite {
 	}
 
 	#if mobile
+	static function hideMouse():Void {
+		if (flixel.FlxG.mouse != null && flixel.FlxG.mouse.visible)
+			flixel.FlxG.mouse.visible = false;
+
+		openfl.ui.Mouse.hide();
+	}
+
 	static function drawDisplayBackground():Void {
 		if (display == null || displayBackground == null)
 			return;

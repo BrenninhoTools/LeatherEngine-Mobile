@@ -6,9 +6,8 @@ import flixel.FlxSprite;
 import flixel.group.FlxSpriteGroup;
 import flixel.math.FlxRect;
 import haxe.Timer;
+import lime.ui.Touch;
 import openfl.Lib;
-import openfl.events.TouchEvent;
-import openfl.geom.Point;
 
 class TouchPoint
 {
@@ -50,9 +49,12 @@ class TouchInput
 {
 	public static var points(default, null):Array<TouchPoint> = [];
 
+	static inline var MAX_POINTS:Int = 20;
+
 	static var ready:Bool = false;
-	static var stagePoint:Point = new Point();
 	static var bounds:FlxRect = FlxRect.get();
+	static var gameX:Float = 0;
+	static var gameY:Float = 0;
 
 	public static function init():Void
 	{
@@ -61,10 +63,12 @@ class TouchInput
 
 		ready = true;
 		openfl.ui.Multitouch.inputMode = openfl.ui.MultitouchInputMode.TOUCH_POINT;
-		Lib.current.stage.addEventListener(TouchEvent.TOUCH_BEGIN, onBegin);
-		Lib.current.stage.addEventListener(TouchEvent.TOUCH_MOVE, onMove);
-		Lib.current.stage.addEventListener(TouchEvent.TOUCH_END, onEnd);
+		Touch.onStart.add(onBegin);
+		Touch.onMove.add(onMove);
+		Touch.onEnd.add(onEnd);
+		Touch.onCancel.add(onEnd);
 		FlxG.signals.focusLost.add(clear);
+		FlxG.signals.focusGained.add(clear);
 	}
 
 	public static function beginFrame():Void
@@ -115,44 +119,62 @@ class TouchInput
 		return null;
 	}
 
-	static function toGame(event:TouchEvent):Point
+	static function convert(touch:Touch):Bool
 	{
-		stagePoint.setTo(event.stageX, event.stageY);
-		var local:Point = FlxG.game.globalToLocal(stagePoint);
-		local.x /= FlxG.scaleMode.scale.x;
-		local.y /= FlxG.scaleMode.scale.y;
-		return local;
+		var window = Lib.application != null ? Lib.application.window : null;
+		if (window == null || FlxG.game == null || FlxG.scaleMode == null)
+			return false;
+
+		var stageX:Float = touch.x * window.width * window.scale;
+		var stageY:Float = touch.y * window.height * window.scale;
+		var scaleX:Float = FlxG.scaleMode.scale.x;
+		var scaleY:Float = FlxG.scaleMode.scale.y;
+
+		if (scaleX <= 0 || scaleY <= 0)
+			return false;
+
+		gameX = (stageX - FlxG.game.x) / scaleX;
+		gameY = (stageY - FlxG.game.y) / scaleY;
+		return true;
 	}
 
-	static function onBegin(event:TouchEvent):Void
+	static function onBegin(touch:Touch):Void
 	{
-		var position:Point = toGame(event);
-		var point:TouchPoint = find(event.touchPointID);
+		if (!convert(touch))
+			return;
+
+		var point:TouchPoint = find(touch.id);
 		if (point != null)
 			point.ended = true;
-		points.push(new TouchPoint(event.touchPointID, position.x, position.y, TouchKeyBridge.frame));
+
+		if (points.length >= MAX_POINTS)
+			points.shift();
+
+		points.push(new TouchPoint(touch.id, gameX, gameY, TouchKeyBridge.frame));
 	}
 
-	static function onMove(event:TouchEvent):Void
+	static function onMove(touch:Touch):Void
 	{
-		var point:TouchPoint = find(event.touchPointID);
+		var point:TouchPoint = find(touch.id);
+		if (point == null || !convert(touch))
+			return;
+
+		point.x = gameX;
+		point.y = gameY;
+	}
+
+	static function onEnd(touch:Touch):Void
+	{
+		var point:TouchPoint = find(touch.id);
 		if (point == null)
 			return;
 
-		var position:Point = toGame(event);
-		point.x = position.x;
-		point.y = position.y;
-	}
+		if (convert(touch))
+		{
+			point.x = gameX;
+			point.y = gameY;
+		}
 
-	static function onEnd(event:TouchEvent):Void
-	{
-		var point:TouchPoint = find(event.touchPointID);
-		if (point == null)
-			return;
-
-		var position:Point = toGame(event);
-		point.x = position.x;
-		point.y = position.y;
 		point.ended = true;
 	}
 }

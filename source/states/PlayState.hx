@@ -3758,6 +3758,11 @@ class PlayState extends MusicBeatState {
 				combo += 1;
 				popUpScore(note.strumTime, note.noteData % SONG.playerKeyCount, setNoteDiff);
 
+				#if mobile
+				if (!Options.getData("botplay") && !playingReplay)
+					mobile.HapticsUtil.vibrate();
+				#end
+
 				if (hitSoundString != "none")
 					hitsound.play(true);
 			} else if (!note.shouldHit) {

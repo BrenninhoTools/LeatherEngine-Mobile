@@ -10,6 +10,9 @@ class MobileOverlay extends FlxGroup
 	public var gestures(default, null):TouchGestures;
 	public var backButton(default, null):TouchGroup;
 
+	var layoutWidth:Int = 0;
+	var layoutHeight:Int = 0;
+
 	public function new(withGestures:Bool = true, withBack:Bool = true)
 	{
 		super();
@@ -33,6 +36,30 @@ class MobileOverlay extends FlxGroup
 					gestures.ignored.push(button);
 			add(gestures);
 		}
+
+		layoutWidth = FlxG.width;
+		layoutHeight = FlxG.height;
+	}
+
+	public function layout():Void
+	{
+		layoutWidth = FlxG.width;
+		layoutHeight = FlxG.height;
+
+		if (overlayCamera != null && (overlayCamera.width != FlxG.width || overlayCamera.height != FlxG.height))
+			overlayCamera.setSize(FlxG.width, FlxG.height);
+
+		if (backButton != null)
+			for (button in backButton.buttons)
+				MobileControls.placeBackButton(button);
+	}
+
+	override function update(elapsed:Float)
+	{
+		if (layoutWidth != FlxG.width || layoutHeight != FlxG.height)
+			layout();
+
+		super.update(elapsed);
 	}
 
 	public function keepOnTop():Void
@@ -51,6 +78,9 @@ class MobileOverlay extends FlxGroup
 
 	override function draw()
 	{
+		if (layoutWidth != FlxG.width || layoutHeight != FlxG.height)
+			layout();
+
 		keepOnTop();
 		super.draw();
 	}

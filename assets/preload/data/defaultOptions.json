@@ -281,6 +281,14 @@
             "value": false
         },
         {
+            "option": "haptics",
+            "value": false
+        },
+        {
+            "option": "hapticsIntensity",
+            "value": 1.0
+        },
+        {
             "option": "screenStyle",
             "value": "Original"
         }

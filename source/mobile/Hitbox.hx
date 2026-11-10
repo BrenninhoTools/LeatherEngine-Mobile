@@ -21,6 +21,7 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 
 	var down:Array<Bool> = [];
 	var justDown:Array<Bool> = [];
+	var justUp:Array<Bool> = [];
 	var excluded:Array<Int> = [];
 	var pointLanes:Map<Int, Int> = new Map();
 	var laneWidth:Float;
@@ -43,6 +44,7 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 		{
 			down.push(false);
 			justDown.push(false);
+			justUp.push(false);
 		}
 
 		if (!arrowMode)
@@ -89,6 +91,18 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 	public function justPressed(lane:Int):Bool
 	{
 		return lane >= 0 && lane < justDown.length && justDown[lane];
+	}
+
+	public function justReleased(lane:Int):Bool
+	{
+		return lane >= 0 && lane < justUp.length && justUp[lane];
+	}
+
+	public var laneCount(get, never):Int;
+
+	function get_laneCount():Int
+	{
+		return keys.length;
 	}
 
 	function laneAt(x:Float, y:Float):Int
@@ -141,10 +155,13 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 		{
 			down[i] = false;
 			justDown[i] = false;
+			justUp[i] = false;
 		}
 
 		if (!exists || !alive || !active || !TouchKeyBridge.isActive(lastFrame))
 		{
+			for (lane in 0...previous.length)
+				justUp[lane] = previous[lane];
 			excluded = [];
 			pointLanes.clear();
 			return;
@@ -189,6 +206,7 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 		for (lane in 0...keys.length)
 		{
 			justDown[lane] = down[lane] && (!previous[lane] || entered[lane]);
+			justUp[lane] = previous[lane] && !down[lane];
 
 			if (!down[lane] || keys[lane] < 0)
 				continue;

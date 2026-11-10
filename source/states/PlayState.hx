@@ -2776,29 +2776,42 @@ class PlayState extends MusicBeatState {
 		if (count == 4)
 			return [for (center in ARROW_CENTERS) FlxG.width * center];
 
-		if (count == 1)
+		if (count <= 1)
 			return [FlxG.width / 2];
 
-		var leftCount:Int = Math.ceil(count / 2);
-		var rightCount:Int = count - leftCount;
-		var most:Int = leftCount > rightCount ? leftCount : rightCount;
-		var spacing:Float = FlxG.width * (ARROW_CENTERS[1] - ARROW_CENTERS[0]);
+		var side:Int = Std.int(count / 2);
+		var middle:Bool = count % 2 == 1;
+		var maxSpacing:Float = FlxG.width * (ARROW_CENTERS[1] - ARROW_CENTERS[0]);
+		var spacing:Float;
+		var innerLeft:Float;
+		var innerRight:Float;
 
-		if (most > 1)
-			spacing = Math.min(spacing, FlxG.width * (ARROW_CENTERS[1] - 0.05) / (most - 1));
+		if (middle) {
+			spacing = Math.min(maxSpacing, FlxG.width * 0.44 / side);
+			innerLeft = FlxG.width / 2 - spacing;
+			innerRight = FlxG.width / 2 + spacing;
+		} else {
+			spacing = Math.min(maxSpacing, FlxG.width * (ARROW_CENTERS[1] - 0.06) / Math.max(1, side - 1));
+			innerLeft = FlxG.width * ARROW_CENTERS[1];
+			innerRight = FlxG.width * ARROW_CENTERS[2];
+		}
 
 		var centers:Array<Float> = [];
-		for (i in 0...leftCount)
-			centers.push(FlxG.width * ARROW_CENTERS[1] - spacing * (leftCount - 1 - i));
-		for (i in 0...rightCount)
-			centers.push(FlxG.width * ARROW_CENTERS[2] + spacing * i);
+		for (i in 0...side)
+			centers.push(innerLeft - spacing * (side - 1 - i));
+		if (middle)
+			centers.push(FlxG.width / 2);
+		for (i in 0...side)
+			centers.push(innerRight + spacing * i);
 		return centers;
 	}
 
 	function applyArrowsLayout():Void {
 		var count:Int = playerStrums.members.length;
 		var centers:Array<Float> = arrowsCenters(count);
-		var spacing:Float = count > 1 ? Math.abs(centers[1] - centers[0]) : FlxG.width;
+		var spacing:Float = FlxG.width;
+		for (i in 1...centers.length)
+			spacing = Math.min(spacing, Math.abs(centers[i] - centers[i - 1]));
 		var top:Float = FlxG.height;
 
 		arrowsNoteScale = ARROWS_SCALE;
@@ -2870,7 +2883,7 @@ class PlayState extends MusicBeatState {
 		FlxG.cameras.add(camControls, false);
 
 		var directions:Array<String> = NoteVariables.Other_Note_Anim_Stuff[binds.length - 1];
-		mobileHitbox = mobile.MobileControls.createHitbox(binds, directions);
+		mobileHitbox = mobile.MobileControls.createLaneHitbox(binds.length, directions);
 		mobileHitbox.cameras = [camControls];
 		add(mobileHitbox);
 
@@ -3265,6 +3278,22 @@ class PlayState extends MusicBeatState {
 							justReleasedArray[i] = FlxG.keys.checkStatus(FlxKey.fromString(bruhBinds[i]), FlxInputState.JUST_RELEASED);
 							heldArray[i] = FlxG.keys.checkStatus(FlxKey.fromString(bruhBinds[i]), FlxInputState.PRESSED);
 						}
+
+						#if mobile
+						if (mobileHitbox != null && i < mobileHitbox.laneCount) {
+							if (mobileHitbox.isDown(i)) {
+								heldArray[i] = true;
+								releasedArray[i] = false;
+								justReleasedArray[i] = false;
+							}
+
+							if (mobileHitbox.justPressed(i))
+								justPressedArray[i] = true;
+
+							if (mobileHitbox.justReleased(i) && !heldArray[i])
+								justReleasedArray[i] = true;
+						}
+						#end
 					}
 
 					for (i in 0...justPressedArray.length) {

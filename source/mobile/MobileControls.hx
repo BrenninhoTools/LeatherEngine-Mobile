@@ -62,6 +62,11 @@ class MobileControls
 		return new Hitbox([for (bind in binds) keyFromString(bind)], directions);
 	}
 
+	public static function createLaneHitbox(count:Int, ?directions:Array<String>):Hitbox
+	{
+		return new Hitbox([for (i in 0...count) -1], directions);
+	}
+
 	public static function createPauseButton(pauseKey:Int):TouchGroup
 	{
 		var group:TouchGroup = new TouchGroup();

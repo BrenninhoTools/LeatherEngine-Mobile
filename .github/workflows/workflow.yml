@@ -3,10 +3,10 @@ name: Build
 on:
   push:
     branches: [ main ]
-    paths-ignore: [ '**.md', 'docs/**', 'art/**' ]
+    paths-ignore: [ '**.md', 'docs/**', 'art/**', 'documents/**' ]
   pull_request:
     branches: [ main ]
-    paths-ignore: [ '**.md', 'docs/**', 'art/**' ]
+    paths-ignore: [ '**.md', 'docs/**', 'art/**', 'documents/**' ]
   workflow_dispatch:
 
 concurrency:

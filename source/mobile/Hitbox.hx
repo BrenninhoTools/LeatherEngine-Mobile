@@ -4,14 +4,13 @@ import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.group.FlxSpriteGroup;
 import flixel.util.FlxColor;
-import flixel.util.FlxGradient;
 import mobile.TouchInput.TouchPoint;
 import openfl.display.BitmapData;
 import openfl.geom.Rectangle;
 
 class Hitbox extends FlxSpriteGroup implements TouchKeySource
 {
-	static inline var BORDER:Int = 4;
+	static inline var BORDER:Int = 3;
 	static inline var FADE_TIME:Float = 0.12;
 
 	public var lanes(default, null):Array<FlxSprite> = [];
@@ -70,20 +69,15 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 
 	static function createLane(width:Int, height:Int, color:FlxColor):BitmapData
 	{
-		var top:FlxColor = color;
-		top.alphaFloat = 0;
-		var middle:FlxColor = color;
-		middle.alphaFloat = 0.12;
-		var bottom:FlxColor = color;
-		bottom.alphaFloat = 0.5;
-
-		var bitmap:BitmapData = FlxGradient.createGradientBitmapData(width, height, [top, middle, bottom], 1, 90);
+		var fill:FlxColor = color;
+		fill.alphaFloat = 0.25;
 
 		var edge:FlxColor = color;
-		edge.alphaFloat = 0.9;
+		edge.alphaFloat = 0.8;
+
+		var bitmap:BitmapData = new BitmapData(width, height, true, fill);
 		bitmap.fillRect(new Rectangle(0, 0, BORDER, height), edge);
 		bitmap.fillRect(new Rectangle(width - BORDER, 0, BORDER, height), edge);
-		bitmap.fillRect(new Rectangle(0, height - BORDER * 2, width, BORDER * 2), edge);
 		return bitmap;
 	}
 

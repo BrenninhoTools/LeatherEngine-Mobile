@@ -1,6 +1,9 @@
 package mobile;
 
+import flixel.FlxBasic;
 import flixel.FlxG;
+import flixel.FlxSprite;
+import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.system.scaleModes.RatioScaleMode;
 import utilities.Options;
 #if android
@@ -23,6 +26,14 @@ class ScreenUtil
 
 	static var listening:Bool = false;
 	static var lastWidth:Int = 0;
+	static var covered:Array<FlxSprite> = [];
+
+	public static var contentOffset(get, never):Float;
+
+	static function get_contentOffset():Float
+	{
+		return Math.max(0, (FlxG.width - FlxG.initialWidth) / 2);
+	}
 
 	#if android
 	static var jniSetFullScreen:Dynamic;
@@ -48,6 +59,9 @@ class ScreenUtil
 		{
 			listening = true;
 			FlxG.signals.gameResized.add((_, _) -> resizeCameras());
+			FlxG.signals.postStateSwitch.add(onStateSwitch);
+			FlxG.signals.preStateSwitch.add(() -> covered = []);
+			FlxG.signals.postUpdate.add(keepCovered);
 		}
 
 		var full:Bool = isFull;
@@ -72,6 +86,99 @@ class ScreenUtil
 		}
 
 		resizeCameras();
+		onStateSwitch();
+	}
+
+	static function onStateSwitch():Void
+	{
+		if (FlxG.state == null || Std.isOfType(FlxG.state, states.PlayState))
+			return;
+
+		fitBackgrounds(cast FlxG.state);
+	}
+
+	public static function fitBackgrounds(group:FlxTypedGroup<FlxBasic>):Void
+	{
+		if (!isFull || FlxG.width <= FlxG.initialWidth || group == null)
+			return;
+
+		for (member in group.members)
+		{
+			if (member == null || !Std.isOfType(member, FlxSprite))
+				continue;
+
+			var sprite:FlxSprite = cast member;
+			if (!isBackground(sprite))
+				continue;
+
+			cover(sprite);
+			if (!covered.contains(sprite))
+				covered.push(sprite);
+		}
+	}
+
+	public static function cover(sprite:FlxSprite):Void
+	{
+		if (sprite == null || sprite.width <= 0 || sprite.height <= 0)
+			return;
+
+		var factor:Float = Math.max(FlxG.width / sprite.width, FlxG.height / sprite.height);
+		if (factor > 1)
+		{
+			sprite.scale.set(sprite.scale.x * factor, sprite.scale.y * factor);
+			sprite.updateHitbox();
+			sprite.screenCenter();
+			return;
+		}
+
+		if (sprite.x > 0 || sprite.x + sprite.width < FlxG.width)
+			sprite.screenCenter(X);
+	}
+
+	static function keepCovered():Void
+	{
+		if (covered.length == 0)
+			return;
+
+		if (!isFull || FlxG.width <= FlxG.initialWidth)
+		{
+			covered = [];
+			return;
+		}
+
+		var index:Int = covered.length;
+		while (index-- > 0)
+		{
+			var sprite:FlxSprite = covered[index];
+			if (sprite == null || !sprite.exists || sprite.graphic == null)
+			{
+				covered.splice(index, 1);
+				continue;
+			}
+
+			if (sprite.width < FlxG.width - 1 || sprite.x > 0.5 || sprite.x + sprite.width < FlxG.width - 0.5)
+				cover(sprite);
+		}
+	}
+
+	static function isBackground(sprite:FlxSprite):Bool
+	{
+		if (sprite.graphic == null)
+			return false;
+
+		var initialWidth:Int = FlxG.initialWidth;
+		var initialHeight:Int = FlxG.initialHeight;
+
+		if (sprite.width < initialWidth * 0.95 || sprite.width >= FlxG.width)
+			return false;
+		if (sprite.height < initialHeight * 0.9)
+			return false;
+
+		var tolerance:Float = initialWidth * 0.05;
+		var leftAligned:Bool = sprite.x <= tolerance && sprite.x + sprite.width >= initialWidth - tolerance;
+		var centered:Bool = Math.abs(sprite.x + sprite.width / 2 - FlxG.width / 2) <= tolerance;
+
+		return leftAligned || centered;
 	}
 
 	static function resizeCameras():Void

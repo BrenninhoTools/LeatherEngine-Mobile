@@ -11,6 +11,7 @@ import extension.androidtools.Settings;
 import extension.androidtools.content.Context;
 import extension.androidtools.os.Build.VERSION as AndroidVersion;
 import extension.androidtools.os.Environment;
+import extension.androidtools.widget.Toast;
 #end
 
 class StorageUtil
@@ -25,28 +26,54 @@ class StorageUtil
 
 	public static var type(default, null):String = DATA;
 	public static var directory(default, null):String = "";
+	public static var usingFallback(default, null):Bool = false;
 
 	static inline var CONFIG_FILE:String = "storage.txt";
 	static inline var EXTERNAL_FOLDER:String = "LeatherEngine";
 
 	public static function init():Void
 	{
-		type = readType();
-		directory = resolve(type);
+		var wanted:String = readType();
+		var candidates:Array<String> = [wanted];
+		if (wanted != DATA)
+			candidates.push(DATA);
 
-		if (directory == null || !prepare(directory))
+		type = DATA;
+		directory = null;
+		usingFallback = false;
+
+		for (candidate in candidates)
 		{
-			type = DATA;
-			directory = resolve(DATA);
-			prepare(directory);
+			var path:String = resolve(candidate);
+			if (path != null && prepare(candidate, path))
+			{
+				type = candidate;
+				directory = path;
+				break;
+			}
 		}
+
+		if (directory == null)
+		{
+			directory = internalDirectory();
+			createDirectory(directory);
+		}
+
+		usingFallback = type != wanted;
 
 		#if sys
 		Sys.setCwd(directory);
 		#end
 
-		for (folder in FOLDERS)
-			createDirectory(directory + folder);
+		ensureFolders();
+
+		if (usingFallback)
+			notify('Could not use "$wanted" storage, using "$type" instead');
+	}
+
+	public static function getPath(file:String = ""):String
+	{
+		return directory + file;
 	}
 
 	public static function setType(value:String):Void
@@ -62,8 +89,11 @@ class StorageUtil
 		catch (e:Dynamic) {}
 		#end
 
-		if (value == EXTERNAL)
+		if (value == EXTERNAL && !hasExternalAccess())
 			requestExternalAccess();
+
+		if (value != type)
+			notify("Restart the game to use the new storage");
 	}
 
 	public static function getSavedType():String
@@ -95,15 +125,15 @@ class StorageUtil
 			path = null;
 		}
 
-		if (path == null || path.length == 0)
-			path = value == DATA ? lime.system.System.applicationStorageDirectory : null;
+		if ((path == null || path.length == 0) && value == DATA)
+			path = internalDirectory();
 		#elseif ios
 		path = lime.system.System.documentsDirectory;
 		#elseif sys
 		path = Sys.getCwd();
 		#end
 
-		return path == null ? null : Path.addTrailingSlash(path);
+		return path == null || path.length == 0 ? null : Path.addTrailingSlash(path);
 	}
 
 	public static function hasExternalAccess():Bool
@@ -114,7 +144,7 @@ class StorageUtil
 			if (AndroidVersion.SDK_INT >= 30)
 				return Environment.isExternalStorageManager();
 
-			return FileSystem.exists(Environment.getExternalStorageDirectory());
+			return Permissions.getGrantedPermissions().contains("android.permission.WRITE_EXTERNAL_STORAGE");
 		}
 		catch (e:Dynamic)
 		{
@@ -131,10 +161,7 @@ class StorageUtil
 		try
 		{
 			if (AndroidVersion.SDK_INT >= 30)
-			{
-				if (!Environment.isExternalStorageManager())
-					Settings.requestSetting("MANAGE_APP_ALL_FILES_ACCESS_PERMISSION");
-			}
+				Settings.requestSetting("MANAGE_APP_ALL_FILES_ACCESS_PERMISSION");
 			else
 				Permissions.requestPermissions(["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]);
 		}
@@ -160,9 +187,39 @@ class StorageUtil
 		#end
 	}
 
-	static function prepare(path:String):Bool
+	public static function ensureFolders():Void
 	{
-		if (type == EXTERNAL && !hasExternalAccess())
+		for (folder in FOLDERS)
+			createDirectory(directory + folder);
+
+		#if sys
+		if (type == MEDIA || type == EXTERNAL)
+		{
+			try
+			{
+				var noMedia:String = directory + ".nomedia";
+				if (!FileSystem.exists(noMedia))
+					File.saveContent(noMedia, "");
+			}
+			catch (e:Dynamic) {}
+		}
+		#end
+	}
+
+	public static function notify(message:String):Void
+	{
+		#if android
+		try
+		{
+			Toast.makeText(message, Toast.LENGTH_LONG);
+		}
+		catch (e:Dynamic) {}
+		#end
+	}
+
+	static function prepare(kind:String, path:String):Bool
+	{
+		if (kind == EXTERNAL && !hasExternalAccess())
 		{
 			requestExternalAccess();
 			return false;
@@ -171,13 +228,19 @@ class StorageUtil
 		if (!createDirectory(path))
 			return false;
 
+		return isWritable(path);
+	}
+
+	static function isWritable(path:String):Bool
+	{
 		#if sys
-		var probe:String = path + ".write_test";
+		var probe:String = path + ".write_test_" + Std.int(haxe.Timer.stamp() * 1000);
 		try
 		{
 			File.saveContent(probe, "ok");
+			var ok:Bool = FileSystem.exists(probe);
 			FileSystem.deleteFile(probe);
-			return true;
+			return ok;
 		}
 		catch (e:Dynamic)
 		{
@@ -206,9 +269,14 @@ class StorageUtil
 		return DATA;
 	}
 
+	static function internalDirectory():String
+	{
+		return Path.addTrailingSlash(lime.system.System.applicationStorageDirectory);
+	}
+
 	static function configPath():String
 	{
-		return Path.addTrailingSlash(lime.system.System.applicationStorageDirectory) + CONFIG_FILE;
+		return internalDirectory() + CONFIG_FILE;
 	}
 
 	static function packageName():String

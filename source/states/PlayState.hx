@@ -583,6 +583,11 @@ class PlayState extends MusicBeatState {
 
 		#if mobile
 		mobileMenuControls = false;
+		arrowsMode = mobile.MobileControls.hitboxMode == mobile.MobileControls.ARROWS;
+		if (arrowsMode)
+			Options.overrides.set("downscroll", true);
+		else
+			Options.overrides.remove("downscroll");
 		#end
 
 		// preload pause music
@@ -1431,6 +1436,11 @@ class PlayState extends MusicBeatState {
 			}
 		}
 
+		#if mobile
+		if (arrowsMode)
+			applyArrowsLayout();
+		#end
+
 		#if MODCHARTING_TOOLS
 		NoteMovement.getDefaultStrumPos(this);
 		#end
@@ -2205,6 +2215,12 @@ class PlayState extends MusicBeatState {
 		if (unspawnNotes[0] != null && !switchedStates) {
 			while (unspawnNotes.length > 0 && unspawnNotes[0].strumTime - Conductor.songPosition < (1500 * songMultiplier)) {
 				var dunceNote:Note = unspawnNotes[0];
+
+				#if mobile
+				if (arrowsMode)
+					prepareArrowsNote(dunceNote);
+				#end
+
 				notes.add(dunceNote);
 
 				var index:Int = unspawnNotes.indexOf(dunceNote);
@@ -2422,7 +2438,7 @@ class PlayState extends MusicBeatState {
 						var coolStrum = enemyStrums.members[Math.floor(Math.abs(daNote.noteData))];
 						var arrayVal = Std.string([daNote.noteData, daNote.arrow_Type, daNote.isSustainNote]);
 
-						daNote.visible = coolStrum.visible;
+						daNote.visible = coolStrum.visible #if mobile && !arrowsMode #end;
 
 						if (!prevEnemyXVals.exists(arrayVal)) {
 							var tempShit:Float = 0.0;
@@ -2744,6 +2760,105 @@ class PlayState extends MusicBeatState {
 	var ogAntiMash:Bool = Options.getData("antiMash");
 
 	#if mobile
+	public var arrowsMode:Bool = false;
+
+	static final ARROW_CENTERS:Array<Float> = [0.24, 0.4, 0.6, 0.76];
+	static inline var ARROWS_SCALE:Float = 1.2;
+	static inline var ARROWS_BOTTOM:Float = 70;
+	static inline var ARROWS_OPPONENT_SCALE:Float = 0.5;
+	static inline var ARROWS_OPPONENT_MARGIN:Float = 20;
+	static inline var ARROWS_OPPONENT_TOP:Float = 55;
+	static inline var ARROWS_OPPONENT_SPACING:Float = 4;
+
+	var arrowsNoteScale:Float = ARROWS_SCALE;
+
+	function arrowsCenters(count:Int):Array<Float> {
+		if (count == 4)
+			return [for (center in ARROW_CENTERS) FlxG.width * center];
+
+		if (count == 1)
+			return [FlxG.width / 2];
+
+		var leftCount:Int = Math.ceil(count / 2);
+		var rightCount:Int = count - leftCount;
+		var most:Int = leftCount > rightCount ? leftCount : rightCount;
+		var spacing:Float = FlxG.width * (ARROW_CENTERS[1] - ARROW_CENTERS[0]);
+
+		if (most > 1)
+			spacing = Math.min(spacing, FlxG.width * (ARROW_CENTERS[1] - 0.05) / (most - 1));
+
+		var centers:Array<Float> = [];
+		for (i in 0...leftCount)
+			centers.push(FlxG.width * ARROW_CENTERS[1] - spacing * (leftCount - 1 - i));
+		for (i in 0...rightCount)
+			centers.push(FlxG.width * ARROW_CENTERS[2] + spacing * i);
+		return centers;
+	}
+
+	function applyArrowsLayout():Void {
+		var count:Int = playerStrums.members.length;
+		var centers:Array<Float> = arrowsCenters(count);
+		var spacing:Float = count > 1 ? Math.abs(centers[1] - centers[0]) : FlxG.width;
+		var top:Float = FlxG.height;
+
+		arrowsNoteScale = ARROWS_SCALE;
+		for (strum in playerStrums.members)
+			if (strum != null && strum.width > 0)
+				arrowsNoteScale = Math.min(arrowsNoteScale, spacing * 0.95 / strum.width);
+
+		for (i => strum in playerStrums.members) {
+			if (strum == null)
+				continue;
+
+			FlxTween.cancelTweensOf(strum);
+			strum.alpha = 1;
+			strum.scale.set(strum.scale.x * arrowsNoteScale, strum.scale.y * arrowsNoteScale);
+			strum.updateHitbox();
+			strum.x = centers[i] - strum.width / 2;
+			strum.y = FlxG.height - strum.height - ARROWS_BOTTOM - mobile.ScreenUtil.gameInset(3);
+			top = Math.min(top, strum.y - strum.height * 0.75);
+		}
+
+		var nextX:Float = ARROWS_OPPONENT_MARGIN + mobile.ScreenUtil.gameInset(0);
+		for (strum in enemyStrums.members) {
+			if (strum == null)
+				continue;
+
+			FlxTween.cancelTweensOf(strum);
+			strum.alpha = 1;
+			strum.scale.set(strum.scale.x * ARROWS_OPPONENT_SCALE, strum.scale.y * ARROWS_OPPONENT_SCALE);
+			strum.updateHitbox();
+			strum.x = nextX;
+			strum.y = ARROWS_OPPONENT_TOP;
+			nextX += strum.width + ARROWS_OPPONENT_SPACING;
+		}
+
+		if (mobileHitbox != null)
+			mobileHitbox.setArrowLanes(centers, Math.max(0, Math.min(top, FlxG.height - 120)));
+	}
+
+	function prepareArrowsNote(note:Note):Void {
+		if (!note.mustPress) {
+			note.visible = false;
+			return;
+		}
+
+		note.scale.x *= arrowsNoteScale;
+		if (!note.isSustainNote)
+			note.scale.y *= arrowsNoteScale;
+		note.updateHitbox();
+	}
+	#end
+
+	override function destroy() {
+		#if mobile
+		Options.overrides.remove("downscroll");
+		#end
+
+		super.destroy();
+	}
+
+	#if mobile
 	public var mobileHitbox:mobile.Hitbox;
 	public var mobilePause:mobile.TouchGroup;
 	public var mobileTap:mobile.TouchGestures;
@@ -2779,6 +2894,14 @@ class PlayState extends MusicBeatState {
 		}
 
 		mobile.TouchKeyBridge.backKeys = [pauseKey];
+
+		if (arrowsMode && playerStrums != null && playerStrums.members.length > 0) {
+			var centers:Array<Float> = [for (strum in playerStrums.members) strum.x + strum.width / 2];
+			var top:Float = FlxG.height;
+			for (strum in playerStrums.members)
+				top = Math.min(top, strum.y - strum.height * 0.75);
+			mobileHitbox.setArrowLanes(centers, Math.max(0, Math.min(top, FlxG.height - 120)));
+		}
 	}
 	#end
 

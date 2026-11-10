@@ -1,7 +1,6 @@
 package mobile;
 
 import flixel.FlxG;
-import flixel.system.scaleModes.FillScaleMode;
 import flixel.system.scaleModes.RatioScaleMode;
 import utilities.Options;
 #if android
@@ -22,6 +21,9 @@ class ScreenUtil
 	public static var style(get, never):String;
 	public static var isFull(get, never):Bool;
 
+	static var listening:Bool = false;
+	static var lastWidth:Int = 0;
+
 	#if android
 	static var jniSetFullScreen:Dynamic;
 	static var jniGetSafeInsets:Dynamic;
@@ -39,10 +41,52 @@ class ScreenUtil
 
 	public static function apply():Void
 	{
-		var full:Bool = isFull;
+		if (FlxG.game == null)
+			return;
 
-		FlxG.scaleMode = full ? new FillScaleMode() : new RatioScaleMode();
+		if (!listening)
+		{
+			listening = true;
+			FlxG.signals.gameResized.add((_, _) -> resizeCameras());
+		}
+
+		var full:Bool = isFull;
 		setNativeFullScreen(full);
+
+		if (full && Std.isOfType(FlxG.scaleMode, WideScaleMode))
+			return;
+		if (!full && !Std.isOfType(FlxG.scaleMode, WideScaleMode) && Std.isOfType(FlxG.scaleMode, RatioScaleMode))
+			return;
+
+		lastWidth = FlxG.width;
+		FlxG.scaleMode = full ? new WideScaleMode() : new RatioScaleMode();
+
+		if (!full)
+		{
+			@:privateAccess
+			{
+				FlxG.width = FlxG.initialWidth;
+				FlxG.height = FlxG.initialHeight;
+			}
+			FlxG.scaleMode.onMeasure(FlxG.stage.stageWidth, FlxG.stage.stageHeight);
+		}
+
+		resizeCameras();
+	}
+
+	static function resizeCameras():Void
+	{
+		if (lastWidth == 0)
+			lastWidth = FlxG.initialWidth;
+
+		if (lastWidth != FlxG.width)
+		{
+			for (camera in FlxG.cameras.list)
+				if (camera != null && camera.width == lastWidth)
+					camera.setSize(FlxG.width, FlxG.height);
+		}
+
+		lastWidth = FlxG.width;
 	}
 
 	public static function safeInsets():Array<Float>

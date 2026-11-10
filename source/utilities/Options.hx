@@ -67,7 +67,12 @@ class Options {
 		saves.set(key, save);
 	}
 
+	public static var overrides:Map<String, Dynamic> = [];
+
 	public static function getData(dataKey:String, ?saveKey:String = "main"):Dynamic {
+		if (saveKey == "main" && overrides.exists(dataKey))
+			return overrides.get(dataKey);
+
 		if (saves.exists(saveKey))
 			return Reflect.getProperty(Reflect.getProperty(saves.get(saveKey), "data"), dataKey);
 

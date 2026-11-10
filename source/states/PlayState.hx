@@ -2756,7 +2756,6 @@ class PlayState extends MusicBeatState {
 
 		var directions:Array<String> = NoteVariables.Other_Note_Anim_Stuff[binds.length - 1];
 		mobileHitbox = mobile.MobileControls.createHitbox(binds, directions);
-		mobileHitbox.targets = cast playerStrums.members;
 		mobileHitbox.cameras = [camControls];
 		add(mobileHitbox);
 

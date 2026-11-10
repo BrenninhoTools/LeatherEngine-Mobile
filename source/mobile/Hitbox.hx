@@ -13,20 +13,27 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 {
 	static inline var BORDER:Int = 4;
 	static inline var FADE_TIME:Float = 0.12;
-	static inline var ARROW_REACH:Float = 140;
+	static inline var ARROW_SIZE:Float = 150;
+	static inline var ARROW_SPACING:Float = 250;
+	static inline var ARROW_MARGIN:Float = 14;
+	static inline var ARROW_OUTER:Float = 0.15;
+	static inline var ARROW_INNER:Float = 0.45;
 
 	public var lanes(default, null):Array<FlxSprite> = [];
 	public var blockers:Array<FlxSprite> = [];
 	public var keys(default, null):Array<Int>;
 	public var arrowMode(default, null):Bool;
 	public var showLanes:Bool;
-	public var targets:Array<FlxSprite>;
+	public var arrows(default, null):Array<FlxSprite> = [];
 
 	var down:Array<Bool> = [];
 	var justDown:Array<Bool> = [];
 	var excluded:Array<Int> = [];
 	var pointLanes:Map<Int, Int> = new Map();
 	var laneWidth:Float;
+	var arrowCenters:Array<Float> = [];
+	var arrowSpacing:Float = ARROW_SPACING;
+	var arrowSize:Float = ARROW_SIZE;
 	var createdFrame:Int;
 	var lastFrame:Int = -1;
 
@@ -46,7 +53,9 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 			justDown.push(false);
 		}
 
-		if (!arrowMode)
+		if (arrowMode)
+			createArrows(directions);
+		else
 			createLanes(directions);
 
 		createdFrame = TouchKeyBridge.frame;
@@ -66,6 +75,73 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 			lanes.push(lane);
 			add(lane);
 		}
+	}
+
+	function createArrows(directions:Array<String>):Void
+	{
+		var count:Int = keys.length;
+		var leftCount:Int = Math.ceil(count / 2);
+		var rightCount:Int = count - leftCount;
+		var span:Float = FlxG.width * (ARROW_INNER - ARROW_OUTER);
+		var most:Int = leftCount > rightCount ? leftCount : rightCount;
+
+		arrowSpacing = most > 1 ? Math.min(ARROW_SPACING, span / (most - 1)) : ARROW_SPACING;
+		arrowSize = Math.min(ARROW_SIZE, arrowSpacing * 0.9);
+
+		var insetLeft:Float = ScreenUtil.gameInset(0);
+		var insetRight:Float = ScreenUtil.gameInset(2);
+		var outerLeft:Float = Math.max(FlxG.width * ARROW_OUTER, insetLeft + arrowSize / 2 + 8);
+		var outerRight:Float = Math.min(FlxG.width * (1 - ARROW_OUTER), FlxG.width - insetRight - arrowSize / 2 - 8);
+
+		if (count == 1)
+			arrowCenters.push(FlxG.width / 2);
+		else
+		{
+			for (i in 0...leftCount)
+				arrowCenters.push(outerLeft + arrowSpacing * i);
+			for (i in 0...rightCount)
+				arrowCenters.push(outerRight - arrowSpacing * (rightCount - 1 - i));
+		}
+
+		var bases:Array<String> = null;
+		if (utilities.NoteVariables.Note_Count_Directions != null && count - 1 < utilities.NoteVariables.Note_Count_Directions.length)
+			bases = utilities.NoteVariables.Note_Count_Directions[count - 1];
+
+		var atlas = Paths.getSparrowAtlas('ui skins/default/arrows/default', 'shared');
+		var bottom:Float = FlxG.height - ARROW_MARGIN - ScreenUtil.gameInset(3);
+
+		for (i in 0...count)
+		{
+			var base:String = bases != null && i < bases.length ? bases[i].toLowerCase() : "left";
+			var press:String = directions != null && i < directions.length ? directions[i] : base;
+
+			var arrow:FlxSprite = new FlxSprite();
+			arrow.frames = atlas;
+			arrow.animation.addByPrefix('static', base + ' static', 24, false);
+			arrow.animation.addByPrefix('pressed', press + ' press', 24, false);
+			arrow.antialiasing = true;
+			arrow.animation.play('static');
+			arrow.setGraphicSize(Std.int(arrowSize));
+			arrow.updateHitbox();
+			arrow.setPosition(arrowCenters[i] - arrow.width / 2, bottom - arrow.height);
+			arrow.visible = showLanes;
+			arrows.push(arrow);
+			add(arrow);
+		}
+	}
+
+	function playArrow(index:Int, pressed:Bool):Void
+	{
+		var arrow:FlxSprite = arrows[index];
+		var name:String = pressed ? 'pressed' : 'static';
+		if (arrow.animation.curAnim != null && arrow.animation.curAnim.name == name)
+			return;
+		if (arrow.animation.getByName(name) == null)
+			return;
+
+		arrow.animation.play(name, true);
+		arrow.centerOffsets();
+		arrow.centerOrigin();
 	}
 
 	static function createLane(width:Int, height:Int, color:FlxColor):BitmapData
@@ -109,19 +185,15 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 	function arrowAt(x:Float, y:Float):Int
 	{
 		var best:Int = -1;
-		var bestDistance:Float = ARROW_REACH;
-		if (targets == null)
+		var bestDistance:Float = Math.max(arrowSpacing / 2, arrowSize / 2 + 12);
+		var top:Float = FlxG.height - ARROW_MARGIN - ScreenUtil.gameInset(3) - arrowSize * 1.8;
+
+		if (y < top)
 			return best;
 
-		for (i in 0...targets.length)
+		for (i in 0...arrowCenters.length)
 		{
-			var arrow:FlxSprite = targets[i];
-			if (arrow == null || !arrow.exists || i >= keys.length)
-				continue;
-
-			var dx:Float = x - (arrow.x + arrow.width / 2);
-			var dy:Float = y - (arrow.y + arrow.height / 2);
-			var distance:Float = Math.sqrt(dx * dx + dy * dy);
+			var distance:Float = Math.abs(x - arrowCenters[i]);
 			if (distance <= bestDistance)
 			{
 				bestDistance = distance;
@@ -211,6 +283,9 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 		super.update(elapsed);
 		lastFrame = TouchKeyBridge.frame;
 
+		for (i in 0...arrows.length)
+			playArrow(i, down[i]);
+
 		for (i in 0...lanes.length)
 		{
 			if (down[i] && showLanes)
@@ -226,7 +301,7 @@ class Hitbox extends FlxSpriteGroup implements TouchKeySource
 		lanes = [];
 		blockers = [];
 		pointLanes.clear();
-		targets = null;
+		arrows = [];
 		super.destroy();
 	}
 }

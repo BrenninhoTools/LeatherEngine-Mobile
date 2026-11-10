@@ -273,8 +273,16 @@
             "value": "lanes"
         },
         {
-            "option": "hitboxVisible",
-            "value": true
+            "option": "invisibleHitbox",
+            "value": false
+        },
+        {
+            "option": "invisiblePauseButton",
+            "value": false
+        },
+        {
+            "option": "screenStyle",
+            "value": "Original"
         }
     ]
 }

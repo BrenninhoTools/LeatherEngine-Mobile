@@ -61,6 +61,11 @@ class TitleState extends MusicBeatState {
 
 			utilities.SaveData.init();
 
+			#if mobile
+			mobile.ScreenUtil.apply();
+			Main.updateDisplayLayout();
+			#end
+
 			#if polymod
 			PolymodHandler.loadMods();
 			#end

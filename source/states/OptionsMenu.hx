@@ -52,8 +52,10 @@ class OptionsMenu extends MusicBeatState {
 		"Mobile" => [
 			new PageOption("Back", 0, "Categories"),
 			new StringSaveOption("Hitbox Mode", mobile.MobileControls.MODES, 1, "hitboxMode"),
-			new BoolOption("Hitbox Visible", "hitboxVisible", 2),
-			new mobile.StorageUtil.StorageOption("Storage", 3)
+			new BoolOption("Invisible Hitbox", "invisibleHitbox", 2),
+			new BoolOption("Invisible Pause Button", "invisiblePauseButton", 3),
+			new mobile.ScreenUtil.ScreenStyleOption("Screen Style", 4),
+			new mobile.StorageUtil.StorageOption("Storage Type", 5)
 		],
 		#end
 		"Gameplay" => [

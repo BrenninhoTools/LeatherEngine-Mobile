@@ -14,6 +14,7 @@ class MobileControls
 
 	public static var hitboxMode(get, never):String;
 	public static var hitboxVisible(get, never):Bool;
+	public static var pauseButtonVisible(get, never):Bool;
 
 	static function get_hitboxMode():String
 	{
@@ -22,7 +23,12 @@ class MobileControls
 
 	static function get_hitboxVisible():Bool
 	{
-		return Options.getData("hitboxVisible") != false;
+		return Options.getData("invisibleHitbox") != true;
+	}
+
+	static function get_pauseButtonVisible():Bool
+	{
+		return Options.getData("invisiblePauseButton") != true;
 	}
 
 	public static function laneColor(direction:String, index:Int, count:Int):FlxColor
@@ -61,7 +67,13 @@ class MobileControls
 		var group:TouchGroup = new TouchGroup();
 		var button:TouchButton = new TouchButton(0, 0, [pauseKey]);
 		button.loadAnimated(Paths.getSparrowAtlas('mobile/pauseButton', 'shared'), 'pause', 90);
-		button.setPosition(FlxG.width - button.width - 18, 18);
+		button.setPosition(FlxG.width - button.width - 18 - ScreenUtil.gameInset(2), 18 + ScreenUtil.gameInset(1));
+		if (!pauseButtonVisible)
+		{
+			button.idleAlpha = 0;
+			button.pressedAlpha = 0;
+			button.alpha = 0;
+		}
 		group.addButton(button);
 		return group;
 	}
@@ -71,7 +83,7 @@ class MobileControls
 		var group:TouchGroup = new TouchGroup();
 		var button:TouchButton = new TouchButton(0, 0, [FlxKey.ESCAPE, FlxKey.BACKSPACE]);
 		button.loadAnimated(Paths.getSparrowAtlas('mobile/backButton', 'shared'), 'back', 180);
-		button.setPosition(FlxG.width - button.width - 18, FlxG.height - button.height - 18);
+		button.setPosition(FlxG.width - button.width - 18 - ScreenUtil.gameInset(2), FlxG.height - button.height - 18 - ScreenUtil.gameInset(3));
 		group.addButton(button);
 		return group;
 	}

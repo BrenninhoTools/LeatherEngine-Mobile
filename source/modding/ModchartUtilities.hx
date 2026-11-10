@@ -171,7 +171,17 @@ class ModchartUtilities {
 		if (path == null)
 			path = PolymodAssets.getPath(Paths.lua("modcharts/" + PlayState.SONG.modchartPath));
 
+		#if mobile
+		var result:Int = 0;
+		var code:Null<String> = sys.FileSystem.exists(path) ? null : mobile.AssetUtil.readText(path);
+
+		if (code != null)
+			result = LuaL.dostring(lua, code);
+		else
+			result = LuaL.dofile(lua, path);
+		#else
 		var result = LuaL.dofile(lua, path); // execute le file
+		#end
 
 		if (result != 0) {
 			CoolUtil.coolError("Lua ERROR:\n" + Lua.tostring(lua, result), "Leather Engine Modcharts");
